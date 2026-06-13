@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "source_pdf": {
+    "path": "/Users/goodtam8/Documents/Programming/QA-For-table-and-graph/hsbc.pdf",
+    "sha256": "49e44aae002f5947b7e1103c4c8cd3169348615f0c7328ecf10bd67a7864be57",
+    "base_name": "hsbc"
+  },
+  "marker_config": {
+    "use_llm": true,
+    "force_ocr": true,
+    "deployment_name": "gpt-4o-mini",
+    "output_formats": [
+      "markdown",
+      "json"
+    ]
+  },
+  "page_count_from_meta": 21,
+  "artifacts": {
+    "markdown": {
+      "path": "hsbc.md",
+      "sha256": "2452b92bd63d9d86c86cee180ad7de252ae00aa5c306389b4a87d1546e0032bd"
+    },
+    "marker_metadata": {
+      "path": "hsbc_meta.json"
+    },
+    "marker_json_tree": {
+      "path": "hsbc.json"
+    },
+    "md_block_counts": {
+      "path": "verification/md_block_counts.json"
+    },
+    "pdf_text_by_page": {
+      "path": "verification/pdf_text_by_page.json",
+      "engine": "pdftext"
+    },
+    "pdf_tables_by_page": {
+      "path": "verification/pdf_tables_by_page.json",
+      "engine": "none"
+    },
+    "stability_run2": null
+  }
+}
