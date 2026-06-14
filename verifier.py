@@ -110,6 +110,22 @@ def load_bundle(manifest_path: str) -> dict:
         with open(rel(a["path"]), encoding="utf-8") as f:
             return f.read()
 
+    # marker_json: the full Marker structured output (hsbc.json / <name>.json).
+    # parser.py writes it alongside the markdown; we probe by name pattern if
+    # it is not yet registered in the manifest artifacts dict.
+    marker_json = load_json("marker_json")
+    if marker_json is None:
+        # Fallback: look for <basename>.json next to the markdown artifact.
+        md_art = arts.get("markdown")
+        if md_art:
+            candidate = os.path.splitext(rel(md_art["path"]))[0] + ".json"
+            if os.path.exists(candidate):
+                with open(candidate, encoding="utf-8") as f:
+                    try:
+                        marker_json = json.load(f)
+                    except Exception:
+                        marker_json = None
+
     return {
         "manifest": manifest,
         "out_dir": out_dir,
@@ -119,6 +135,7 @@ def load_bundle(manifest_path: str) -> dict:
         "pdf_text_by_page": load_json("pdf_text_by_page"),
         "pdf_tables_by_page": load_json("pdf_tables_by_page"),
         "stability_run2": load_text("stability_run2"),
+        "marker_json": marker_json,   # NEW: full Marker structured output
     }
 
 
@@ -341,13 +358,415 @@ def table_content_fidelity(pdf_tbl_pages: list, md: str, cfg: dict):
 
 
 # --------------------------------------------------------------------------- #
+# NEW: Cell-boundary bleed detection
+#
+# Catches the class of error where the last character(s) of a cell are the
+# START of a word that continues in the NEXT cell on the same row, producing
+# a dangling uppercase letter in cell[i] and a lowercase fragment in cell[i+1].
+#
+# Classic example from the HSBC document:
+#   cell = "Non-HSBC Credit Card/ Bank Account     F"   (bleeds "F")
+#   next  = "ree"                                        (orphan suffix)
+#   → should be "Free" in the charge column
+#
+# The check looks for two patterns:
+#   A) left_cell ends with a single uppercase letter AND right_cell is a
+#      pure-lowercase word of >= 2 chars (high-precision signal of a bleed).
+#   B) left_cell ends with a space + uppercase letter sequence AND right_cell
+#      starts with a lowercase continuation that, when concatenated, forms a
+#      dictionary-plausible word (heuristic: all alpha, length 3-20).
+# --------------------------------------------------------------------------- #
+_COMMON_SUFFIXES = re.compile(
+    r"^(ree|ull|ull|nit|harging|tion|ment|ount|arge|ange|ine|ice|ate|oss|ank|ee|er|"
+    r"ing|ed|es|ly|al|or|ar|le|re|ge|se|ve|ce|st|nd|rd|th|ng|nt|ny|ne|nk|ck|sk|"
+    r"ss|tt|ll|ff|pp|rr|mm|nn|bb|dd|gg|zz)$",
+    re.IGNORECASE,
+)
+
+# Pattern: cell ends with whitespace + one or more uppercase letters that are
+# the beginning of a word whose tail appears in the next cell.
+_BLEED_LEFT_RE = re.compile(r"\s+([A-Z]{1,4})\s*$")
+
+
+def check_cell_boundary_bleed(md_tables: list) -> list:
+    """
+    Scan every consecutive cell pair in each table row for character-bleed
+    artifacts.  Returns a list of findings (severity=major).
+
+    Two signals are detected:
+      1. UPPERCASE_SUFFIX_BLEED: left cell ends with 1-4 uppercase letters
+         and the right cell starts with 2+ lowercase letters that together
+         form a plausible word (common suffix match OR purely alpha 3-15 chars).
+      2. SHORT_ISOLATED_FRAGMENT: a non-first, non-last cell consists of only
+         2-4 lowercase letters — a strong indicator that a word was split
+         across cell boundaries.
+    """
+    findings = []
+    for ti, t in enumerate(md_tables):
+        for ri, row in enumerate(t["cells"]):
+            # -- Signal 1: UPPERCASE_SUFFIX_BLEED --
+            for ci in range(len(row) - 1):
+                left = row[ci]
+                right = row[ci + 1].strip()
+                m = _BLEED_LEFT_RE.search(left)
+                if m:
+                    bleed_chars = m.group(1)
+                    # right cell should start with lowercase letters
+                    if right and right[0].islower() and right[:8].isalpha():
+                        candidate = bleed_chars + right
+                        # Accept if it forms an all-alpha word <= 20 chars or
+                        # the right fragment matches a common suffix
+                        if (
+                            re.fullmatch(r"[A-Za-z]{3,20}", candidate)
+                            or _COMMON_SUFFIXES.match(right)
+                        ):
+                            row_label = _clean_cell(row[0])[:50] if row else ""
+                            findings.append({
+                                "dimension": "table",
+                                "severity": "major",
+                                "table_index": ti + 1,
+                                "row": ri,
+                                "col": ci,
+                                "detail": (
+                                    f"Table {ti+1} row '{row_label}' col {ci}: "
+                                    f"likely cell-boundary bleed — left cell ends "
+                                    f"with {bleed_chars!r}, right cell starts with "
+                                    f"{right[:10]!r}. "
+                                    f"Reconstructed word candidate: {candidate!r}."
+                                ),
+                                "left_cell_tail": left[-20:],
+                                "right_cell_head": right[:20],
+                                "candidate_word": candidate,
+                            })
+
+            # -- Signal 2: SHORT_ISOLATED_FRAGMENT --
+            # A cell in the middle of a row that is purely 2-5 lowercase
+            # alpha characters is almost always a split-off word fragment.
+            for ci in range(1, len(row) - 1):   # skip first and last cells
+                cell = row[ci].strip()
+                if re.fullmatch(r"[a-z]{2,5}", cell):
+                    row_label = _clean_cell(row[0])[:50] if row else ""
+                    # Check left neighbour: does it end with a capital?
+                    left_tail = row[ci - 1].rstrip()[-1] if row[ci - 1].strip() else ""
+                    hint = (f" Left cell ends with {left_tail!r}." if left_tail.isupper() else "")
+                    findings.append({
+                        "dimension": "table",
+                        "severity": "major",
+                        "table_index": ti + 1,
+                        "row": ri,
+                        "col": ci,
+                        "detail": (
+                            f"Table {ti+1} row '{row_label}' col {ci}: "
+                            f"isolated short fragment {cell!r} — likely a word "
+                            f"split across cell boundaries.{hint}"
+                        ),
+                        "fragment": cell,
+                        "left_cell_tail": row[ci - 1][-20:] if ci > 0 else "",
+                    })
+
+    return findings
+
+
+# --------------------------------------------------------------------------- #
+# NEW: Per-row cell recall (catches token-aggregation masking)
+#
+# The global table_content_fidelity() pools all cell tokens across the whole
+# document.  If a word like "free" appears in any OTHER row, the missing
+# "free" from a corrupted cell is silently covered.  Per-row recall compares
+# each PDF table row's tokens against the nearest-matching markdown row,
+# flagging rows where the match is suspiciously poor.
+# --------------------------------------------------------------------------- #
+
+def _row_tokens(row: list) -> Counter:
+    """Word tokens for a single table row (list of cell strings)."""
+    c = Counter()
+    for cell in row:
+        cleaned = _clean_cell(cell)
+        if cleaned and all(ch in _MARK_CHARS + " " for ch in cleaned):
+            continue
+        c.update(_WORD_RE.findall(cleaned))
+    return c
+
+
+def check_per_row_recall(pdf_tbl_pages: list, md_tables: list,
+                          low_recall_threshold: float = 0.5) -> list:
+    """
+    For every PDF table row, find the best-matching markdown row by token
+    overlap and flag pairs where word-recall is below low_recall_threshold.
+
+    This catches cases where the document-level aggregation hides a
+    local corruption: the missing token may exist elsewhere but is absent
+    from the specific row in question.
+
+    Only rows with >= 2 meaningful word tokens are evaluated (short/empty
+    rows generate too many false positives).
+    """
+    findings = []
+    # Flatten all markdown rows across all tables for matching.
+    all_md_rows = []
+    for ti, t in enumerate(md_tables):
+        for ri, row in enumerate(t["cells"]):
+            all_md_rows.append((ti, ri, row, _row_tokens(row)))
+
+    if not all_md_rows:
+        return findings
+
+    row_idx = 0  # PDF table fragment counter (for labelling only)
+    for page_tables in pdf_tbl_pages:
+        for tbl in page_tables:
+            if not isinstance(tbl, dict) or "cells" not in tbl:
+                continue
+            row_idx += 1
+            for ri, pdf_row in enumerate(tbl["cells"]):
+                pdf_tok = _row_tokens(pdf_row)
+                total = sum(pdf_tok.values())
+                if total < 2:
+                    continue
+
+                # Find best-matching markdown row by token recall.
+                best_rec = 0.0
+                best_match = None
+                for (mti, mri, md_row, md_tok) in all_md_rows:
+                    covered = sum(min(c, md_tok.get(t, 0)) for t, c in pdf_tok.items())
+                    r = covered / total
+                    if r > best_rec:
+                        best_rec = r
+                        best_match = (mti, mri, md_row)
+
+                if best_rec < low_recall_threshold:
+                    pdf_label = " | ".join(_clean_cell(c) for c in pdf_row)[:80]
+                    md_label = ""
+                    if best_match:
+                        md_label = " | ".join(_clean_cell(c) for c in best_match[2])[:80]
+                    missing = [t for t in pdf_tok if (best_match[2] and
+                                _row_tokens(best_match[2]).get(t, 0) == 0)]
+                    findings.append({
+                        "dimension": "table",
+                        "severity": "major",
+                        "detail": (
+                            f"PDF table fragment {row_idx} row {ri}: best markdown row match "
+                            f"has only {best_rec:.0%} token recall. "
+                            f"PDF row: {pdf_label!r}. "
+                            f"Best MD row: {md_label!r}."
+                        ),
+                        "pdf_row_preview": pdf_label,
+                        "best_md_row_preview": md_label,
+                        "per_row_recall": round(best_rec, 3),
+                        "missing_tokens": sorted(missing)[:15],
+                    })
+
+    return findings
+
+
+# --------------------------------------------------------------------------- #
+# NEW: Marker JSON cell fidelity
+#
+# parser.py exports the full Marker JSON (hsbc.json).  Its Table blocks carry
+# the INTENDED cell text as Marker understood it.  Comparing Marker's own cell
+# text against the re-parsed markdown pipe-table cells catches rendering
+# artifacts that occur AFTER Marker has done its work — e.g. the pipe-table
+# serialiser splitting a word across two cells.
+#
+# We compare at the cell level (exact or near-exact string match) rather than
+# token level to catch partial-word bleeds that survive token-bag recall.
+# --------------------------------------------------------------------------- #
+
+def _extract_marker_table_cells(marker_json: dict) -> list:
+    """
+    Walk the Marker JSON tree and return a list of 2-D cell grids, one per
+    Table block.  Handles both the legacy flat list format and the nested
+    children/blocks format emitted by recent Marker versions.
+    """
+    tables = []
+
+    def _walk(node):
+        if not isinstance(node, dict):
+            return
+        btype = node.get("block_type") or node.get("type") or ""
+        if "table" in btype.lower():
+            # Try to extract a cell grid from rows/cells sub-structure.
+            grid = _extract_grid_from_table_node(node)
+            if grid:
+                tables.append(grid)
+        # Recurse into children / content / blocks
+        for key in ("children", "content", "blocks", "rows"):
+            child = node.get(key)
+            if isinstance(child, list):
+                for item in child:
+                    _walk(item)
+
+    def _extract_grid_from_table_node(node):
+        # Format A: node["rows"] is a list of row objects, each with "cells"
+        rows = node.get("rows")
+        if isinstance(rows, list):
+            grid = []
+            for row in rows:
+                if isinstance(row, dict):
+                    cells = row.get("cells", [])
+                    grid.append([_get_cell_text(c) for c in cells])
+                elif isinstance(row, list):
+                    grid.append([_get_cell_text(c) for c in row])
+            if grid:
+                return grid
+        # Format B: node["html"] / node["markdown"] — fall back to re-parsing
+        # the embedded markdown snippet if present.
+        md_snippet = node.get("markdown") or node.get("md") or ""
+        if md_snippet and "|" in md_snippet:
+            parsed = parse_md_tables_with_cells(md_snippet)
+            if parsed:
+                return parsed[0]["cells"]
+        # Format C: flat "cells" list of lists
+        cells = node.get("cells")
+        if isinstance(cells, list) and cells and isinstance(cells[0], list):
+            return [[_get_cell_text(c) for c in row] for row in cells]
+        return None
+
+    def _get_cell_text(cell) -> str:
+        if isinstance(cell, str):
+            return cell
+        if isinstance(cell, dict):
+            return (cell.get("text") or cell.get("content") or
+                    cell.get("value") or cell.get("html") or "")
+        return ""
+
+    if isinstance(marker_json, list):
+        for item in marker_json:
+            _walk(item)
+    elif isinstance(marker_json, dict):
+        # Top-level may be {"pages": [...]} or directly a block tree
+        pages = marker_json.get("pages") or marker_json.get("children") or []
+        if pages:
+            for page in pages:
+                _walk(page)
+        else:
+            _walk(marker_json)
+
+    return tables
+
+
+def check_marker_cell_fidelity(marker_json: dict, md: str,
+                                bleed_threshold: float = 0.85) -> list:
+    """
+    Compare Marker's own structured table cells against the cells in the
+    re-parsed pipe-table markdown.  Flags cells where the Marker text and the
+    markdown cell text diverge, with special focus on character-bleed artifacts.
+
+    A bleed artifact is characterised by:
+      - Marker cell text is a complete word (e.g. "Free")
+      - Markdown cell is only the tail of that word (e.g. "ree") or empty
+      - The missing prefix was concatenated to the PREVIOUS cell
+
+    Returns a list of findings (severity=major).
+    """
+    if not marker_json:
+        return []
+
+    marker_tables = _extract_marker_table_cells(marker_json)
+    md_tables = parse_md_tables_with_cells(md)
+
+    if not marker_tables or not md_tables:
+        return []
+
+    findings = []
+    # Match marker tables to md tables by proximity (best-token-overlap).
+    for mki, mk_grid in enumerate(marker_tables):
+        if not mk_grid:
+            continue
+        mk_tok = _cell_word_tokens(mk_grid)
+        if not mk_tok:
+            continue
+
+        # Find best matching MD table
+        best_idx, best_score = 0, -1.0
+        for mdi, md_t in enumerate(md_tables):
+            md_tok = _cell_word_tokens(md_t["cells"])
+            score, _ = _cell_recall(mk_tok, md_tok)
+            if score > best_score:
+                best_score, best_idx = score, mdi
+
+        if best_score < 0.3:
+            # Tables are too dissimilar — likely no corresponding MD table.
+            continue
+
+        md_grid = md_tables[best_idx]["cells"]
+
+        # Row-level comparison: for each Marker row, find best matching MD row.
+        for ri, mk_row in enumerate(mk_grid):
+            mk_row_tok = _row_tokens(mk_row)
+            if sum(mk_row_tok.values()) < 2:
+                continue
+
+            best_r, best_mrow = 0.0, None
+            for md_row in md_grid:
+                md_row_tok = _row_tokens(md_row)
+                covered = sum(min(c, md_row_tok.get(t, 0)) for t, c in mk_row_tok.items())
+                r = covered / max(1, sum(mk_row_tok.values()))
+                if r > best_r:
+                    best_r, best_mrow = r, md_row
+
+            if best_r < bleed_threshold and best_mrow is not None:
+                # Cell-level diff within the matched row pair.
+                for ci, mk_cell in enumerate(mk_row):
+                    mk_clean = _clean_cell(mk_cell)
+                    if not mk_clean or len(mk_clean) < 2:
+                        continue
+                    # Find closest MD cell in matched row.
+                    md_cell = best_mrow[ci] if ci < len(best_mrow) else ""
+                    md_clean = _clean_cell(md_cell)
+
+                    # Check if the MD cell is a strict suffix of the Marker cell
+                    # (the characteristic bleed pattern: "free" in MD, "free" should
+                    # be in a short cell but the leading "F" was in the previous col).
+                    if mk_clean and md_clean and mk_clean != md_clean:
+                        # Is md_clean a proper suffix of mk_clean?
+                        if mk_clean.endswith(md_clean) and len(md_clean) < len(mk_clean):
+                            bleed = mk_clean[: len(mk_clean) - len(md_clean)]
+                            findings.append({
+                                "dimension": "table",
+                                "severity": "major",
+                                "table_index": mki + 1,
+                                "row": ri,
+                                "col": ci,
+                                "detail": (
+                                    f"Marker table {mki+1} row {ri} col {ci}: "
+                                    f"Marker cell text is {mk_clean!r} but markdown "
+                                    f"cell is only {md_clean!r} — first {len(bleed)} "
+                                    f"char(s) {bleed!r} appear to have bled into the "
+                                    f"previous cell (cell-boundary bleed artifact)."
+                                ),
+                                "marker_cell": mk_clean,
+                                "markdown_cell": md_clean,
+                                "bleed_chars": bleed,
+                            })
+                        # Is md_clean empty but mk_clean is not?  Possible full bleed.
+                        elif not md_clean and mk_clean:
+                            findings.append({
+                                "dimension": "table",
+                                "severity": "major",
+                                "table_index": mki + 1,
+                                "row": ri,
+                                "col": ci,
+                                "detail": (
+                                    f"Marker table {mki+1} row {ri} col {ci}: "
+                                    f"Marker cell text is {mk_clean!r} but "
+                                    f"markdown cell is EMPTY — content entirely "
+                                    f"missing or bled into adjacent cell."
+                                ),
+                                "marker_cell": mk_clean,
+                                "markdown_cell": "",
+                            })
+
+    return findings
+
+
+# --------------------------------------------------------------------------- #
 # Tick-mark consistency: catch cells that SHOULD be a tick but were OCR-mangled
 # into stray glyphs (',', '.', '#', '~', 'V', '_', ...). Recall-based checks
 # cannot see this because the corrupted glyph "matches" the (equally corrupted)
 # ground truth. This is a content-internal sanity check, no ground truth needed.
 # --------------------------------------------------------------------------- #
 _GOOD_TICKS = set("\u2713\u2714\u221a")               # checkmark glyphs
-_SUSPECT_GLYPHS = set(",.\u2022\u00b7~^*_-\u2013\u2014") | set("vVlI")
+_SUSPECT_GLYPHS = set(",.\\u2022\\u00b7~^*_-\\u2013\\u2014") | set("vVlI")
 
 
 def _tick_strip_html(cell: str) -> str:
@@ -479,6 +898,7 @@ def verify(bundle: dict, cfg: dict) -> dict:
     block_counts = bundle["md_block_counts"] or {"total": {}, "per_page": {}}
     pdf_text = bundle["pdf_text_by_page"] or {"pages": []}
     pdf_tables = bundle["pdf_tables_by_page"] or {"pages": []}
+    marker_json = bundle.get("marker_json")   # NEW
 
     pdf_pages = pdf_text.get("pages", [])
     n_pages_pdf = len(pdf_pages)
@@ -546,9 +966,6 @@ def verify(bundle: dict, cfg: dict) -> dict:
     table_debug = None
 
     if pdf_tbl_engine == "none" or not pdf_tbl_pages:
-        # Ground truth unavailable (e.g. pdfplumber not installed when the
-        # bundle was built). We CANNOT verify tables -- do NOT award a fake
-        # perfect score; flag it and drop the dimension from the aggregate.
         table_score = None
         findings.append({
             "dimension": "table", "severity": "major",
@@ -559,7 +976,6 @@ def verify(bundle: dict, cfg: dict) -> dict:
     elif total_pdf_tables == 0:
         table_score = 1.0  # genuinely no tables in the PDF
     else:
-        # Verify the ACTUAL cell content (text + numbers), document-level.
         table_score, table_findings, table_debug = table_content_fidelity(
             pdf_tbl_pages, md, cfg)
         findings.extend(table_findings)
@@ -568,10 +984,7 @@ def verify(bundle: dict, cfg: dict) -> dict:
             findings.append({"dimension": "table", "severity": "major",
                              "detail": f"Table content score {table_score:.0%} below minimum for table-heavy doc."})
 
-    # ---- 3b) TICK-MARK CONSISTENCY (self-contained, ground-truth-free) ---- #
-    # Catches cells that should be a tick but were OCR-mangled to ',', '.',
-    # '~', 'V', etc. Recall checks miss this because the corrupted glyph also
-    # appears (corrupted) in the PDF ground truth. Runs on markdown alone.
+    # ---- 3b) TICK-MARK CONSISTENCY --------------------------------------- #
     md_tables_cells = parse_md_tables_with_cells(md)
     tick_findings = check_tick_columns(
         md_tables_cells,
@@ -581,11 +994,54 @@ def verify(bundle: dict, cfg: dict) -> dict:
     if tick_findings:
         findings.extend(tick_findings)
         section_flags.extend(tick_findings)
-        # corrupted ticks shouldn't silently leave table_score at a high value
         if table_score is not None:
             table_score = round(
                 table_score * max(0.5, 1.0 - cfg.get("tick_penalty_each", 0.03)
                                   * len(tick_findings)), 4)
+
+    # ---- 3c) CELL-BOUNDARY BLEED (NEW) ----------------------------------- #
+    # Detects character-bleed artifacts such as "Non-HSBC ... F" | "ree"
+    # instead of "Non-HSBC ..." | "Free".
+    bleed_findings = check_cell_boundary_bleed(md_tables_cells)
+    if bleed_findings:
+        findings.extend(bleed_findings)
+        section_flags.extend(bleed_findings)
+        if table_score is not None:
+            table_score = round(
+                table_score * max(0.5, 1.0 - cfg.get("bleed_penalty_each", 0.04)
+                                  * len(bleed_findings)), 4)
+
+    # ---- 3d) PER-ROW RECALL (NEW) ---------------------------------------- #
+    # Catches token-aggregation masking: a word present elsewhere in the doc
+    # hides a missing word in a specific corrupted row.
+    if pdf_tbl_pages and total_pdf_tables > 0:
+        per_row_findings = check_per_row_recall(
+            pdf_tbl_pages, md_tables_cells,
+            low_recall_threshold=cfg.get("per_row_recall_threshold", 0.5),
+        )
+        if per_row_findings:
+            findings.extend(per_row_findings)
+            section_flags.extend(per_row_findings)
+            if table_score is not None:
+                table_score = round(
+                    table_score * max(0.5, 1.0 - cfg.get("per_row_penalty_each", 0.02)
+                                      * len(per_row_findings)), 4)
+
+    # ---- 3e) MARKER JSON CELL FIDELITY (NEW) ----------------------------- #
+    # Use Marker's own structured output as a second ground-truth to catch
+    # bleed artifacts that survive the pdfplumber token-recall check.
+    if marker_json:
+        marker_cell_findings = check_marker_cell_fidelity(
+            marker_json, md,
+            bleed_threshold=cfg.get("marker_cell_bleed_threshold", 0.85),
+        )
+        if marker_cell_findings:
+            findings.extend(marker_cell_findings)
+            section_flags.extend(marker_cell_findings)
+            if table_score is not None:
+                table_score = round(
+                    table_score * max(0.5, 1.0 - cfg.get("marker_cell_penalty_each", 0.03)
+                                      * len(marker_cell_findings)), 4)
 
     # ---- 4) PAGE CONSISTENCY --------------------------------------------- #
     page_consistency_ok = True
@@ -593,7 +1049,6 @@ def verify(bundle: dict, cfg: dict) -> dict:
         page_consistency_ok = False
         findings.append({"dimension": "page", "severity": "critical",
                          "detail": f"Marker reports {n_pages_meta} pages but PDF text extraction found {n_pages_pdf}."})
-    # whole-page dropout already captured via per-page recall == 0
     for i, r in enumerate(page_recalls):
         if r == 0.0 and len(tokens(pdf_pages[i])) > 20:
             findings.append({"page": i + 1, "dimension": "page", "severity": "critical",
@@ -623,11 +1078,10 @@ def verify(bundle: dict, cfg: dict) -> dict:
         "structure": structure_score,
         "cleanliness": cleanliness_score,
     }
-    if table_score is not None:        # omit when table ground-truth missing
+    if table_score is not None:
         components["table"] = table_score
     if stability_score is not None:
         components["stability"] = stability_score
-    # renormalise weights over present components
     used_w = {k: weights[k] for k in components}
     wsum = sum(used_w.values())
     overall = sum(components[k] * used_w[k] for k in components) / wsum * 100.0
@@ -689,6 +1143,14 @@ DEFAULT_CFG = {
     "tick_col_ratio": 0.50,         # column counts as tick-column if ticks dominate
     "tick_min_per_col": 3,          # need >=3 valid ticks to treat col as tick-column
     "tick_penalty_each": 0.03,      # table_score penalty per suspect cell (capped)
+    # --- cell-boundary bleed (NEW) --- #
+    "bleed_penalty_each": 0.04,     # table_score penalty per bleed finding
+    # --- per-row recall (NEW) --- #
+    "per_row_recall_threshold": 0.50,  # flag rows below this token recall
+    "per_row_penalty_each": 0.02,      # table_score penalty per low-recall row
+    # --- marker JSON cell fidelity (NEW) --- #
+    "marker_cell_bleed_threshold": 0.85,  # row-level recall below this triggers cell diff
+    "marker_cell_penalty_each": 0.03,     # table_score penalty per bleed cell found
 }
 
 
