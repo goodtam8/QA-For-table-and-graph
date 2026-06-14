@@ -35,7 +35,7 @@
     },
     "pdf_tables_by_page": {
       "path": "verification/pdf_tables_by_page.json",
-      "engine": "none"
+      "engine": "pdfplumber"
     },
     "stability_run2": null
   }

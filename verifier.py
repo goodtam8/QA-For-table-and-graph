@@ -188,6 +188,221 @@ def parse_md_tables(md: str) -> list:
 
 
 # --------------------------------------------------------------------------- #
+# Table CONTENT fidelity (cell text + numbers), not just counts
+# --------------------------------------------------------------------------- #
+# Glyph-only cells (checkmarks, bullets, OCR noise) are not comparable text and
+# are dropped before token comparison.
+_MARK_CHARS = "\u2713\u2714\u221a~vV\u2022\u00b7.,-\u2013\u2014\ufffd*"
+_NUM_RE = re.compile(r"\d[\d,]*\.?\d*")
+
+
+def _clean_cell(s: str) -> str:
+    """Normalise a cell so PDF and markdown renderings of the same value match."""
+    if not s:
+        return ""
+    s = s.replace("\n", " ")
+    s = re.sub(r"<br\s*/?>", " ", s, flags=re.IGNORECASE)   # markdown line breaks
+    s = re.sub(r"<[^>]+>", " ", s)                          # html tags (<b>,<sup>)
+    s = re.sub(r"\$([^$]*)\$", r"\1", s)                    # strip $...$ math wrappers
+    s = s.replace("\u00a0", " ")
+    s = re.sub(r"\s+", " ", s)
+    return s.strip().lower()
+
+
+def _cell_word_tokens(cells) -> Counter:
+    """Word-token multiset over a 2D cell grid (pure-glyph cells skipped)."""
+    c = Counter()
+    for row in cells:
+        for cell in row:
+            cleaned = _clean_cell(cell)
+            if cleaned and all(ch in _MARK_CHARS + " " for ch in cleaned):
+                continue
+            c.update(_WORD_RE.findall(cleaned))
+    return c
+
+
+def _cell_num_tokens(cells) -> Counter:
+    """Numeric-token multiset (commas stripped so 1,200 == 1200)."""
+    c = Counter()
+    for row in cells:
+        for cell in row:
+            for m in _NUM_RE.findall(_clean_cell(cell)):
+                c[m.replace(",", "")] += 1
+    return c
+
+
+def _cell_recall(ref: Counter, cand: Counter):
+    """Return (recall, missing_keys). recall=1.0 when nothing to match."""
+    if not ref:
+        return 1.0, []
+    covered = sum(min(c, cand.get(t, 0)) for t, c in ref.items())
+    missing = [t for t in ref if cand.get(t, 0) == 0]
+    return covered / max(1, sum(ref.values())), missing
+
+
+def parse_md_tables_with_cells(md: str) -> list:
+    """Like parse_md_tables, but also returns the cell grid for content checks."""
+    tables = []
+    lines = md.splitlines()
+    i = 0
+
+    def split_row(ln):
+        parts = ln.split("|")
+        if parts and parts[0].strip() == "":
+            parts = parts[1:]
+        if parts and parts[-1].strip() == "":
+            parts = parts[:-1]
+        return [p.strip() for p in parts]
+
+    while i < len(lines):
+        if "|" in lines[i] and i + 1 < len(lines) and re.match(r"^\s*\|?[\s:|-]+\|?\s*$", lines[i + 1]):
+            block = [lines[i]]
+            j = i + 2
+            while j < len(lines) and "|" in lines[j]:
+                block.append(lines[j])
+                j += 1
+            header = split_row(block[0])
+            body = [split_row(b) for b in block[1:]]   # separator already skipped
+            tables.append({"rows": len(body) + 1, "cols": len(header),
+                           "cells": [header] + body})
+            i = j
+        else:
+            i += 1
+    return tables
+
+
+def table_content_fidelity(pdf_tbl_pages: list, md: str, cfg: dict):
+    """
+    Verify the ACTUAL CONTENT of tables (cell text + numbers), not just counts.
+
+    Comparison is document-level on purpose: pdfplumber over-segments logical
+    tables into many fragments, and per-page markdown alignment is unreliable
+    without pagination markers -- so page-scoped matching produces false
+    'table missing' criticals. Document-level cell/number recall is robust to
+    both and directly answers "did the table values survive into the markdown?"
+
+    Returns (score 0..1 | None, findings, debug).
+    """
+    md_tables = parse_md_tables_with_cells(md)
+
+    pdf_tok, pdf_num = Counter(), Counter()
+    for p in pdf_tbl_pages:
+        for t in p:
+            if isinstance(t, dict) and "cells" in t:
+                pdf_tok += _cell_word_tokens(t["cells"])
+                pdf_num += _cell_num_tokens(t["cells"])
+    md_tok, md_num = Counter(), Counter()
+    for t in md_tables:
+        md_tok += _cell_word_tokens(t["cells"])
+        md_num += _cell_num_tokens(t["cells"])
+
+    cell_recall, missing_terms = _cell_recall(pdf_tok, md_tok)
+    num_recall, missing_nums = _cell_recall(pdf_num, md_num)
+
+    pages_with_pdf = sum(1 for p in pdf_tbl_pages
+                         if any(isinstance(t, dict) and "cells" in t for t in p))
+    total_md = len(md_tables)
+    presence = min(1.0, total_md / max(1, pages_with_pdf))
+
+    # numbers dominate for fee/charge documents
+    score = 0.20 * presence + 0.30 * cell_recall + 0.50 * num_recall
+
+    findings = []
+    if pdf_tok and cell_recall < cfg["table_cell_critical"]:
+        findings.append({"dimension": "table", "severity": "critical",
+                         "detail": "Table cell-text recall {:.0%}: table CONTENT largely missing.".format(cell_recall),
+                         "sample_missing_terms": sorted(missing_terms)[:20]})
+    elif pdf_tok and cell_recall < cfg["table_cell_major"]:
+        findings.append({"dimension": "table", "severity": "major",
+                         "detail": "Table cell-text recall {:.0%} below target.".format(cell_recall),
+                         "sample_missing_terms": sorted(missing_terms)[:20]})
+    if sum(pdf_num.values()) >= 5 and num_recall < cfg["table_numeric_critical"]:
+        findings.append({"dimension": "table", "severity": "critical",
+                         "detail": "Only {:.0%} of table NUMBERS preserved -- {} numeric value(s) "
+                                   "missing from markdown tables.".format(num_recall, len(missing_nums)),
+                         "sample_missing_numbers": sorted(missing_nums)[:20]})
+    elif sum(pdf_num.values()) >= 5 and num_recall < cfg["table_numeric_major"]:
+        findings.append({"dimension": "table", "severity": "major",
+                         "detail": "{:.0%} of table numbers preserved; {} value(s) missing.".format(
+                             num_recall, len(missing_nums)),
+                         "sample_missing_numbers": sorted(missing_nums)[:20]})
+
+    debug = {
+        "pdf_table_fragments": sum(len(p) for p in pdf_tbl_pages),
+        "pdf_pages_with_tables": pages_with_pdf,
+        "md_tables": total_md,
+        "presence": round(presence, 3),
+        "cell_text_recall": round(cell_recall, 3),
+        "numeric_recall": round(num_recall, 3),
+        "pdf_numbers": sum(pdf_num.values()),
+        "missing_numbers": sorted(missing_nums)[:20],
+    }
+    return round(score, 4), findings, debug
+
+
+# --------------------------------------------------------------------------- #
+# Tick-mark consistency: catch cells that SHOULD be a tick but were OCR-mangled
+# into stray glyphs (',', '.', '#', '~', 'V', '_', ...). Recall-based checks
+# cannot see this because the corrupted glyph "matches" the (equally corrupted)
+# ground truth. This is a content-internal sanity check, no ground truth needed.
+# --------------------------------------------------------------------------- #
+_GOOD_TICKS = set("\u2713\u2714\u221a")               # checkmark glyphs
+_SUSPECT_GLYPHS = set(",.\u2022\u00b7~^*_-\u2013\u2014") | set("vVlI")
+
+
+def _tick_strip_html(cell: str) -> str:
+    s = re.sub(r"<[^>]+>", "", cell)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _classify_tick_cell(cell: str) -> str:
+    c = _tick_strip_html(cell)
+    if c == "":
+        return "EMPTY"
+    core = c.rstrip(".,_ -").lstrip()
+    if core in _GOOD_TICKS:
+        return "GOOD_TICK"
+    if core and core[0] in _GOOD_TICKS and core[1:].strip(" .,_-").isdigit():
+        return "GOOD_TICK"                            # tick + footnote digit
+    if len(c) == 1 and c in _SUSPECT_GLYPHS:
+        return "SUSPECT"
+    stripped = c.replace(" ", "")
+    if 1 <= len(stripped) <= 2 and all(ch in _SUSPECT_GLYPHS for ch in stripped):
+        return "SUSPECT"
+    return "TEXT"
+
+
+def check_tick_columns(md_tables, tick_col_ratio=0.5, min_ticks=3):
+    """Flag suspect cells inside columns that are dominated by valid ticks."""
+    findings = []
+    for ti, t in enumerate(md_tables):
+        cells = t["cells"]
+        ncols = max((len(r) for r in cells), default=0)
+        for col in range(ncols):
+            classes = [(ri, _classify_tick_cell(row[col]))
+                       for ri, row in enumerate(cells) if col < len(row)]
+            n_good = sum(1 for _, c in classes if c == "GOOD_TICK")
+            n_suspect = sum(1 for _, c in classes if c == "SUSPECT")
+            n_nonempty = sum(1 for _, c in classes if c != "EMPTY")
+            if n_nonempty == 0:
+                continue
+            tick_share = (n_good + n_suspect) / n_nonempty
+            if n_good >= min_ticks and tick_share >= tick_col_ratio:
+                for ri, klass in classes:
+                    if klass == "SUSPECT":
+                        raw = cells[ri][col]
+                        rowlabel = _tick_strip_html(cells[ri][0]) if cells[ri] else ""
+                        findings.append({
+                            "dimension": "table", "severity": "major",
+                            "table_index": ti + 1, "row": ri, "col": col,
+                            "detail": "Table {} row '{}' col {}: cell={!r} looks like a "
+                                      "corrupted tick (column is {}/{} valid checkmarks).".format(
+                                          ti + 1, rowlabel[:40], col, raw, n_good, n_nonempty),
+                        })
+    return findings
+
+
+# --------------------------------------------------------------------------- #
 # Cleanliness signals
 # --------------------------------------------------------------------------- #
 def cleanliness_signals(md: str) -> dict:
@@ -323,52 +538,54 @@ def verify(bundle: dict, cfg: dict) -> dict:
         findings.append({"dimension": "structure", "severity": "major",
                          "detail": f"Only {n_lists} list items vs ~{exp['expected_list_lines']} list-like lines in PDF (bullets likely flattened)."})
 
-    # ---- 3) TABLE FIDELITY (per page) ------------------------------------ #
+    # ---- 3) TABLE FIDELITY (content, not just counts) -------------------- #
+    pdf_tbl_engine = pdf_tables.get("engine", "none")
     pdf_tbl_pages = pdf_tables.get("pages", [])
     total_pdf_tables = sum(len(p) for p in pdf_tbl_pages)
     total_md_tables = len(md_tables_parsed) or n_tables_json
-    per_page_counts = block_counts.get("per_page", {})
+    table_debug = None
 
-    table_findings = []
-    if total_pdf_tables == 0:
-        table_score = 1.0  # nothing to verify
+    if pdf_tbl_engine == "none" or not pdf_tbl_pages:
+        # Ground truth unavailable (e.g. pdfplumber not installed when the
+        # bundle was built). We CANNOT verify tables -- do NOT award a fake
+        # perfect score; flag it and drop the dimension from the aggregate.
+        table_score = None
+        findings.append({
+            "dimension": "table", "severity": "major",
+            "detail": f"PDF table ground-truth unavailable (engine={pdf_tbl_engine!r}); "
+                      f"table fidelity NOT verified. Markdown has {total_md_tables} table(s). "
+                      f"Install pdfplumber and regenerate the bundle.",
+        })
+    elif total_pdf_tables == 0:
+        table_score = 1.0  # genuinely no tables in the PDF
     else:
-        # presence: did we produce roughly as many tables as the PDF has?
-        presence = min(1.0, total_md_tables / max(1, total_pdf_tables))
-        # row plausibility: compare total rows
-        pdf_rows = sum(t.get("rows", 0) for p in pdf_tbl_pages for t in p if isinstance(t, dict))
-        md_rows = sum(t["rows"] for t in md_tables_parsed)
-        row_ratio = ratio(md_rows, pdf_rows) if pdf_rows else 1.0
-        table_score = round(0.6 * presence + 0.4 * row_ratio, 4)
-
-        if total_md_tables < total_pdf_tables:
-            sev = "critical" if total_md_tables == 0 else "major"
-            table_findings.append({
-                "dimension": "table", "severity": sev,
-                "detail": f"Found {total_md_tables} table(s) in markdown but PDF has ~{total_pdf_tables}. "
-                          f"{total_pdf_tables - total_md_tables} table(s) likely dropped or merged.",
-            })
-        if pdf_rows and md_rows < 0.7 * pdf_rows:
-            table_findings.append({
-                "dimension": "table", "severity": "major",
-                "detail": f"Markdown tables have ~{md_rows} rows vs ~{pdf_rows} in PDF (rows likely lost).",
-            })
-        # per-page: which page lost its table
-        for i, p in enumerate(pdf_tbl_pages):
-            pdf_n = len([t for t in p if isinstance(t, dict) and "rows" in t])
-            md_n = per_page_counts.get(str(i), {}).get("Table", 0) + \
-                   per_page_counts.get(str(i), {}).get("TableGroup", 0)
-            if pdf_n > 0 and md_n == 0:
-                table_findings.append({
-                    "page": i + 1, "dimension": "table", "severity": "critical",
-                    "detail": f"Page {i+1}: PDF has {pdf_n} table(s) but markdown has none on this page.",
-                })
+        # Verify the ACTUAL cell content (text + numbers), document-level.
+        table_score, table_findings, table_debug = table_content_fidelity(
+            pdf_tbl_pages, md, cfg)
         findings.extend(table_findings)
         section_flags.extend([f for f in table_findings if "page" in f])
+        if table_score < cfg["min_table"] / 100.0:
+            findings.append({"dimension": "table", "severity": "major",
+                             "detail": f"Table content score {table_score:.0%} below minimum for table-heavy doc."})
 
-    if total_pdf_tables and table_score < cfg["min_table"] / 100.0:
-        findings.append({"dimension": "table", "severity": "major",
-                         "detail": f"Table score {table_score:.0%} below minimum for table-heavy doc."})
+    # ---- 3b) TICK-MARK CONSISTENCY (self-contained, ground-truth-free) ---- #
+    # Catches cells that should be a tick but were OCR-mangled to ',', '.',
+    # '~', 'V', etc. Recall checks miss this because the corrupted glyph also
+    # appears (corrupted) in the PDF ground truth. Runs on markdown alone.
+    md_tables_cells = parse_md_tables_with_cells(md)
+    tick_findings = check_tick_columns(
+        md_tables_cells,
+        tick_col_ratio=cfg.get("tick_col_ratio", 0.5),
+        min_ticks=cfg.get("tick_min_per_col", 3),
+    )
+    if tick_findings:
+        findings.extend(tick_findings)
+        section_flags.extend(tick_findings)
+        # corrupted ticks shouldn't silently leave table_score at a high value
+        if table_score is not None:
+            table_score = round(
+                table_score * max(0.5, 1.0 - cfg.get("tick_penalty_each", 0.03)
+                                  * len(tick_findings)), 4)
 
     # ---- 4) PAGE CONSISTENCY --------------------------------------------- #
     page_consistency_ok = True
@@ -404,9 +621,10 @@ def verify(bundle: dict, cfg: dict) -> dict:
     components = {
         "text": text_score,
         "structure": structure_score,
-        "table": table_score,
         "cleanliness": cleanliness_score,
     }
+    if table_score is not None:        # omit when table ground-truth missing
+        components["table"] = table_score
     if stability_score is not None:
         components["stability"] = stability_score
     # renormalise weights over present components
@@ -422,7 +640,8 @@ def verify(bundle: dict, cfg: dict) -> dict:
     if n_critical > 0 or overall < cfg["manual_review_below"]:
         route = "MANUAL_REVIEW"
     elif (text_score < cfg["retry_text_below"] or
-          (total_pdf_tables and table_score < cfg["retry_table_below"])):
+          (total_pdf_tables and table_score is not None
+           and table_score < cfg["retry_table_below"])):
         route = "RETRY_OCR_LLM"
     elif overall >= cfg["min_overall"] and n_major == 0:
         route = "PASS"
@@ -436,7 +655,8 @@ def verify(bundle: dict, cfg: dict) -> dict:
         "scores": {k: round(v * 100, 1) for k, v in components.items()},
         "page_count": {"pdf": n_pages_pdf, "marker_meta": n_pages_meta,
                        "consistent": page_consistency_ok},
-        "tables": {"pdf": total_pdf_tables, "markdown": total_md_tables},
+        "tables": {"pdf_fragments": total_pdf_tables, "markdown": total_md_tables,
+                   "engine": pdf_tbl_engine, "content_check": table_debug},
         "severity_counts": {"critical": n_critical, "major": n_major, "minor": n_minor},
         "per_page_text_recall": page_recalls,
         "inaccurate_sections": section_flags,   # <-- WHICH sections are off
@@ -460,6 +680,15 @@ DEFAULT_CFG = {
     "retry_table_below": 0.50,    # weak tables -> retry
     "page_recall_critical": 0.35, # per-page recall below -> critical
     "page_recall_major": 0.65,    # per-page recall below -> major
+    # --- table CONTENT thresholds (cell text + numbers) --- #
+    "table_cell_critical": 0.50,    # cell-text recall below -> critical
+    "table_cell_major": 0.80,       # cell-text recall below -> major
+    "table_numeric_critical": 0.60, # numeric recall below -> critical
+    "table_numeric_major": 0.85,    # numeric recall below -> major
+    # --- tick-mark consistency (corrupted-checkmark detection) --- #
+    "tick_col_ratio": 0.50,         # column counts as tick-column if ticks dominate
+    "tick_min_per_col": 3,          # need >=3 valid ticks to treat col as tick-column
+    "tick_penalty_each": 0.03,      # table_score penalty per suspect cell (capped)
 }
 
 
@@ -492,7 +721,13 @@ def main():
     print(f"Pages    : PDF={report['page_count']['pdf']} "
           f"Marker={report['page_count']['marker_meta']} "
           f"consistent={report['page_count']['consistent']}")
-    print(f"Tables   : PDF={report['tables']['pdf']} MD={report['tables']['markdown']}")
+    tb = report['tables']
+    print(f"Tables   : PDF_fragments={tb['pdf_fragments']} MD={tb['markdown']} engine={tb['engine']}")
+    if tb.get('content_check'):
+        cc = tb['content_check']
+        print(f"           cell_text_recall={cc['cell_text_recall']:.0%} "
+              f"numeric_recall={cc['numeric_recall']:.0%} "
+              f"(pdf_numbers={cc['pdf_numbers']}, missing={cc['missing_numbers']})")
     print(f"Severity : {report['severity_counts']}")
     if report["inaccurate_sections"]:
         print("\nInaccurate sections (route to review):")
