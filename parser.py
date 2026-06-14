@@ -1,5 +1,5 @@
 """
-parser.py — PDF -> Markdown converter (Marker) that ALSO exports a
+parser.py �� PDF -> Markdown converter (Marker) that ALSO exports a
 self-contained "verification bundle" for a fully decoupled verifier.
 
 Decoupling contract
@@ -22,6 +22,14 @@ Artifacts written to <output_directory>/ :
                                (row/col counts + cell text) per page.
     md_block_counts.json       Block-type counts derived from Marker JSON,
                                aggregated and per-page.
+    table_bboxes.json          Bounding box polygons for every Table block
+                               found in the Marker JSON tree, keyed by
+                               page_index.  Used by verifier/qa for
+                               vision-fallback cropping.
+    page_images/               (generated separately by tableimg.py)
+      page_001.png             High-res PNG renders of each PDF page.
+      page_002.png             Run:  python tableimg.py --input <pdf>
+      ...                            --output <output>/verification/page_images
     stability/                 (optional) second-run markdown for rerun diff.
       hsbc_run2.md
 
@@ -109,7 +117,6 @@ def extract_pdf_text_by_page(pdf_path: str) -> dict:
     Tries pdftext (what Marker uses), then pdfplumber, then PyPDF2.
     The verifier uses this as the recall baseline, so we record the engine.
     """
-    # pdftext (same library Marker relies on -> most comparable)
     try:
         from pdftext.extraction import plain_text_output  # type: ignore
         import pypdfium2 as pdfium  # type: ignore
@@ -184,7 +191,6 @@ def _walk_blocks(node, per_page, page_id, total):
         node.get("block_type") if isinstance(node, dict) else None
     )
     if bt == "Page":
-        # page id often encoded in node id like "/page/3/Page/..."
         nid = getattr(node, "id", None) or (
             node.get("id") if isinstance(node, dict) else None
         )
@@ -222,22 +228,62 @@ def block_counts_from_json(json_rendered) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# 4) Table bounding boxes from Marker JSON tree
+# --------------------------------------------------------------------------- #
+def extract_table_bboxes_from_json(json_tree) -> list:
+    """
+    Walks the Marker JSON tree to extract polygons (bounding boxes) for all
+    Table blocks.  Returns a list of:
+        {"page_index": <int>, "polygon": [[x,y], [x,y], [x,y], [x,y]]}
+    Used by verifier and qa for vision-fallback cropping via tableimg.py.
+    """
+    tables = []
+
+    def _walk(node, current_page):
+        bt = (node.get("block_type") if isinstance(node, dict)
+              else getattr(node, "block_type", None))
+
+        if bt == "Page":
+            nid = (node.get("id") if isinstance(node, dict)
+                   else getattr(node, "id", None))
+            if nid and "/page/" in str(nid):
+                try:
+                    current_page = int(str(nid).split("/page/")[1].split("/")[0])
+                except Exception:
+                    pass
+
+        if bt == "Table":
+            poly = (node.get("polygon") if isinstance(node, dict)
+                    else getattr(node, "polygon", None))
+            if poly:
+                tables.append({"page_index": current_page, "polygon": poly})
+
+        children = (node.get("children") if isinstance(node, dict)
+                    else getattr(node, "children", None))
+        for child in children or []:
+            _walk(child, current_page)
+
+    _walk(json_tree, current_page=0)
+    return tables
+
+
+# --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
 def main():
     load_dotenv()
 
     ap = argparse.ArgumentParser(description="PDF->Markdown parser with verification bundle")
-    ap.add_argument("--input", default="hsbc.pdf", help="Input PDF path")
+    ap.add_argument("--input",  default="hsbc.pdf",      help="Input PDF path")
     ap.add_argument("--output", default="./hsbc_output", help="Output directory")
     ap.add_argument("--stability-rerun", action="store_true",
                     help="Run markdown conversion twice for rerun-stability check")
     args = ap.parse_args()
 
-    input_filename = args.input
-    base_name = os.path.splitext(os.path.basename(input_filename))[0]
+    input_filename  = args.input
+    base_name       = os.path.splitext(os.path.basename(input_filename))[0]
     output_directory = args.output
-    verif_dir = os.path.join(output_directory, "verification")
+    verif_dir       = os.path.join(output_directory, "verification")
     os.makedirs(output_directory, exist_ok=True)
     os.makedirs(verif_dir, exist_ok=True)
 
@@ -246,26 +292,27 @@ def main():
 
     # ---- (a) Markdown conversion (primary deliverable) -------------------- #
     md_converter = make_converter("markdown", models)
-    rendered_md = md_converter(input_filename)
-    save_output(rendered_md, output_directory, base_name)  # writes <base>.md, meta, images
+    rendered_md  = md_converter(input_filename)
+    save_output(rendered_md, output_directory, base_name)  # writes .md, meta, images
     markdown_text, _, _images = text_from_rendered(rendered_md)
     md_path = os.path.join(output_directory, f"{base_name}.md")
     write_text(md_path, markdown_text)
 
     # ---- (b) Marker metadata (TOC + page_stats/block_counts) -------------- #
-    meta = rendered_md.metadata
+    meta      = rendered_md.metadata
     meta_dict = meta if isinstance(meta, dict) else getattr(meta, "__dict__", {})
     meta_path = os.path.join(output_directory, f"{base_name}_meta.json")
     write_json(meta_path, meta_dict)
 
     # ---- (c) JSON block tree (structural truth from Marker) --------------- #
     json_converter = make_converter("json", models)
-    rendered_json = json_converter(input_filename)
-    # Serialise the tree (pydantic -> dict)
+    rendered_json  = json_converter(input_filename)
     try:
         json_tree = rendered_json.model_dump(mode="json")
     except Exception:
-        json_tree = json.loads(json.dumps(rendered_json, default=lambda o: getattr(o, "__dict__", str(o))))
+        json_tree = json.loads(
+            json.dumps(rendered_json, default=lambda o: getattr(o, "__dict__", str(o)))
+        )
     json_path = os.path.join(output_directory, f"{base_name}.json")
     write_json(json_path, json_tree)
 
@@ -273,13 +320,18 @@ def main():
     bc_path = os.path.join(verif_dir, "md_block_counts.json")
     write_json(bc_path, md_block_counts)
 
+    # ---- (c2) Table bounding boxes (spatial index for vision fallback) ---- #
+    table_bboxes = extract_table_bboxes_from_json(json_tree)
+    bbox_path    = os.path.join(verif_dir, "table_bboxes.json")
+    write_json(bbox_path, table_bboxes)
+
     # ---- (d) Ground-truth PDF text per page ------------------------------- #
-    pdf_text = extract_pdf_text_by_page(input_filename)
+    pdf_text      = extract_pdf_text_by_page(input_filename)
     pdf_text_path = os.path.join(verif_dir, "pdf_text_by_page.json")
     write_json(pdf_text_path, pdf_text)
 
     # ---- (e) Ground-truth PDF tables per page ----------------------------- #
-    pdf_tables = extract_pdf_tables_by_page(input_filename)
+    pdf_tables      = extract_pdf_tables_by_page(input_filename)
     pdf_tables_path = os.path.join(verif_dir, "pdf_tables_by_page.json")
     write_json(pdf_tables_path, pdf_tables)
 
@@ -287,38 +339,76 @@ def main():
     stability_path = None
     if args.stability_rerun:
         rerun_converter = make_converter("markdown", models)
-        rerun_rendered = rerun_converter(input_filename)
+        rerun_rendered  = rerun_converter(input_filename)
         rerun_text, _, _ = text_from_rendered(rerun_rendered)
-        stability_path = os.path.join(verif_dir, "stability", f"{base_name}_run2.md")
+        stability_path  = os.path.join(verif_dir, "stability", f"{base_name}_run2.md")
         write_text(stability_path, rerun_text)
 
     # ---- (g) Manifest: the contract the verifier reads -------------------- #
+    #
+    # page_images is produced by tableimg.py, not by parser.py itself.
+    # We record its expected location so verifier.py and qa.py can discover
+    # the PNGs without knowing where tableimg.py puts them.
+    page_images_dir = os.path.join(verif_dir, "page_images")
+
     manifest = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "source_pdf": {
-            "path": os.path.abspath(input_filename),
-            "sha256": sha256_file(input_filename),
+            "path":      os.path.abspath(input_filename),
+            "sha256":    sha256_file(input_filename),
             "base_name": base_name,
         },
         "marker_config": {
-            "use_llm": True,
-            "force_ocr": True,
+            "use_llm":         True,
+            "force_ocr":       True,
             "deployment_name": "gpt-4o-mini",
-            "output_formats": ["markdown", "json"],
+            "output_formats":  ["markdown", "json"],
         },
         "page_count_from_meta": len(meta_dict.get("page_stats", []) or []),
         "artifacts": {
-            "markdown":          {"path": os.path.relpath(md_path, output_directory),
-                                  "sha256": sha256_text(markdown_text)},
-            "marker_metadata":   {"path": os.path.relpath(meta_path, output_directory)},
-            "marker_json_tree":  {"path": os.path.relpath(json_path, output_directory)},
-            "md_block_counts":   {"path": os.path.relpath(bc_path, output_directory)},
-            "pdf_text_by_page":  {"path": os.path.relpath(pdf_text_path, output_directory),
-                                  "engine": pdf_text.get("engine")},
-            "pdf_tables_by_page":{"path": os.path.relpath(pdf_tables_path, output_directory),
-                                  "engine": pdf_tables.get("engine")},
-            "stability_run2":    ({"path": os.path.relpath(stability_path, output_directory)}
-                                  if stability_path else None),
+            "markdown": {
+                "path":   os.path.relpath(md_path, output_directory),
+                "sha256": sha256_text(markdown_text),
+            },
+            "marker_metadata": {
+                "path": os.path.relpath(meta_path, output_directory),
+            },
+            "marker_json_tree": {
+                "path": os.path.relpath(json_path, output_directory),
+            },
+            "md_block_counts": {
+                "path": os.path.relpath(bc_path, output_directory),
+            },
+            # FIX 1: table_bboxes is now registered in the manifest so
+            # verifier.py can load it via load_bundle() without hardcoding paths.
+            "table_bboxes": {
+                "path":  os.path.relpath(bbox_path, output_directory),
+                "count": len(table_bboxes),
+            },
+            "pdf_text_by_page": {
+                "path":   os.path.relpath(pdf_text_path, output_directory),
+                "engine": pdf_text.get("engine"),
+            },
+            "pdf_tables_by_page": {
+                "path":   os.path.relpath(pdf_tables_path, output_directory),
+                "engine": pdf_tables.get("engine"),
+            },
+            # FIX 2: page_images directory registered so verifier/qa can locate
+            # PNG crops for vision fallback.  The directory may not exist yet
+            # (tableimg.py must be run separately), so we record its expected
+            # path and a note rather than failing if it is absent.
+            "page_images": {
+                "path": os.path.relpath(page_images_dir, output_directory),
+                "note": (
+                    "Generated by tableimg.py.  "
+                    "Run: python tableimg.py --input <pdf> "
+                    f"--output {page_images_dir}"
+                ),
+            },
+            "stability_run2": (
+                {"path": os.path.relpath(stability_path, output_directory)}
+                if stability_path else None
+            ),
         },
     }
     manifest_path = os.path.join(verif_dir, "manifest.json")
@@ -328,11 +418,15 @@ def main():
     print(markdown_text[:1500])
     print("\n--- block_type totals (from Marker JSON) ---")
     print(json.dumps(md_block_counts["total"], indent=2, ensure_ascii=False))
-    print(f"\n[OK] Markdown          -> {md_path}")
-    print(f"[OK] Marker metadata   -> {meta_path}")
-    print(f"[OK] Marker JSON tree  -> {json_path}")
+    print(f"\n[OK] Markdown            -> {md_path}")
+    print(f"[OK] Marker metadata     -> {meta_path}")
+    print(f"[OK] Marker JSON tree    -> {json_path}")
+    print(f"[OK] Table bboxes        -> {bbox_path}  ({len(table_bboxes)} tables)")
     print(f"[OK] Verification bundle -> {verif_dir}")
-    print(f"[OK] Manifest          -> {manifest_path}")
+    print(f"[OK] Manifest            -> {manifest_path}")
+    print(f"\n[NOTE] Page images not generated by parser.py.")
+    print(f"       Run separately:  python tableimg.py --input {input_filename} "
+          f"--output {page_images_dir}")
     print("\nNext:  python verifier.py --bundle "
           f"{os.path.join(output_directory, 'verification', 'manifest.json')}")
 
