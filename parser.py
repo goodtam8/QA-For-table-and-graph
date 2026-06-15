@@ -12,14 +12,14 @@ table cross-checks).  All structural "ground truth" travels in the bundle.
 Artifacts written to <output_directory>/ :
 
   hsbc.md                      Final markdown (Marker, markdown renderer).
-                               Each page is preceded by a <!-- Page N --> comment
-                               so qa.py can locate content by page number.
+                               Clean output — no page-marker comments injected.
   hsbc_meta.json               Marker metadata (table_of_contents, page_stats).
   hsbc.json                    Marker JSON block tree (block_type structure).
   verification/
     manifest.json              Index + integrity hashes of every artifact.
     pdf_text_by_page.json      Ground-truth text extracted directly from PDF,
                                per page (independent of Marker).
+                               qa.py uses this for page localization.
     pdf_tables_by_page.json    Tables re-extracted directly from the PDF
                                (row/col counts + cell text) per page.
     md_block_counts.json       Block-type counts derived from Marker JSON,
@@ -111,99 +111,6 @@ def write_text(path: str, text: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Page-marker injection
-# --------------------------------------------------------------------------- #
-def inject_page_markers(json_rendered, markdown_text: str) -> str:
-    """
-    Split the Marker markdown output by page and re-join with
-    <!-- Page N --> comments (1-based) so that qa.py can locate
-    content by page number.
-
-    Strategy
-    --------
-    Marker’s JSON tree has Page blocks whose children carry the actual
-    content.  We walk the tree to collect the first distinctive text
-    token of each page, then use those tokens as split-points in the
-    flat markdown string.  If the heuristic cannot find a reliable
-    split point we fall back to inserting a single <!-- Page 1 --> at
-    the top (better than nothing).
-    """
-    # Collect the first non-empty text snippet for each page from the JSON tree
-    page_first_tokens: list[str] = []
-
-    def _first_text(node) -> str | None:
-        """Return the first non-trivial text found under this node."""
-        if isinstance(node, dict):
-            bt = node.get("block_type", "")
-            txt = node.get("text") or node.get("html") or ""
-            txt = txt.strip()
-            if txt and bt not in ("Page", "Document"):
-                return txt[:80]  # first 80 chars is enough as a fingerprint
-            for child in node.get("children") or []:
-                found = _first_text(child)
-                if found:
-                    return found
-        else:
-            bt = getattr(node, "block_type", "")
-            txt = (getattr(node, "text", None) or getattr(node, "html", None) or "").strip()
-            if txt and bt not in ("Page", "Document"):
-                return txt[:80]
-            for child in getattr(node, "children", None) or []:
-                found = _first_text(child)
-                if found:
-                    return found
-        return None
-
-    pages = (
-        json_rendered.get("children")
-        if isinstance(json_rendered, dict)
-        else getattr(json_rendered, "children", None)
-    ) or []
-
-    for page_node in pages:
-        token = _first_text(page_node)
-        page_first_tokens.append(token)
-
-    if not page_first_tokens:
-        return f"<!-- Page 1 -->\n\n{markdown_text}"
-
-    # Build annotated markdown by finding each token in the text
-    result_parts: list[str] = []
-    remaining = markdown_text
-    last_found_pos = 0
-
-    for page_num, token in enumerate(page_first_tokens, start=1):
-        if token is None:
-            # No distinctive text for this page; just record the marker
-            # at the current position (will be inserted before next found token)
-            result_parts.append(f"<!-- Page {page_num} -->\n\n")
-            continue
-
-        # Search for the token in the remaining text (case-insensitive)
-        search_token = token[:40].lower()  # use first 40 chars for robustness
-        lower_remaining = remaining.lower()
-        idx = lower_remaining.find(search_token)
-
-        if idx == -1:
-            # Token not found; insert marker at current position
-            result_parts.append(f"<!-- Page {page_num} -->\n\n")
-            continue
-
-        # Everything before idx belongs to the previous page
-        if idx > 0:
-            result_parts.append(remaining[:idx])
-
-        # Insert the page marker, then continue from idx
-        result_parts.append(f"<!-- Page {page_num} -->\n\n")
-        remaining = remaining[idx:]
-
-    # Append whatever is left after the last marker
-    result_parts.append(remaining)
-
-    return "".join(result_parts)
-
-
-# --------------------------------------------------------------------------- #
 # 1) Ground-truth PDF text, per page  (independent of Marker)
 # --------------------------------------------------------------------------- #
 def extract_pdf_text_by_page(pdf_path: str) -> dict:
@@ -211,6 +118,7 @@ def extract_pdf_text_by_page(pdf_path: str) -> dict:
     Return {"engine": <name>, "pages": [text, ...]}.
     Tries pdftext (what Marker uses), then pdfplumber, then PyPDF2.
     The verifier uses this as the recall baseline, so we record the engine.
+    qa.py also uses this for reliable page localization.
     """
     try:
         from pdftext.extraction import plain_text_output  # type: ignore
@@ -391,6 +299,11 @@ def main():
     save_output(rendered_md, output_directory, base_name)  # writes .md, meta, images
     markdown_text, _, _images = text_from_rendered(rendered_md)
 
+    # Write clean markdown (no page-marker injection — see qa.py for page
+    # localization which reads pdf_text_by_page.json instead).
+    md_path = os.path.join(output_directory, f"{base_name}.md")
+    write_text(md_path, markdown_text)
+
     # ---- (b) Marker metadata (TOC + page_stats/block_counts) -------------- #
     meta      = rendered_md.metadata
     meta_dict = meta if isinstance(meta, dict) else getattr(meta, "__dict__", {})
@@ -418,14 +331,10 @@ def main():
     bbox_path    = os.path.join(verif_dir, "table_bboxes.json")
     write_json(bbox_path, table_bboxes)
 
-    # ---- (c3) Inject <!-- Page N --> markers into markdown ---------------- #
-    # Use the JSON tree (already parsed above) to locate page boundaries
-    # and insert HTML comments so qa.py can identify which page answers live on.
-    markdown_text = inject_page_markers(json_tree, markdown_text)
-    md_path = os.path.join(output_directory, f"{base_name}.md")
-    write_text(md_path, markdown_text)
-
     # ---- (d) Ground-truth PDF text per page ------------------------------- #
+    # NOTE: qa.py uses this file (pdf_text_by_page.json) to locate which
+    # page(s) are relevant to a user question — much more reliable than
+    # trying to inject page markers into the flattened markdown string.
     pdf_text      = extract_pdf_text_by_page(input_filename)
     pdf_text_path = os.path.join(verif_dir, "pdf_text_by_page.json")
     write_json(pdf_text_path, pdf_text)
@@ -441,8 +350,6 @@ def main():
         rerun_converter = make_converter("markdown", models)
         rerun_rendered  = rerun_converter(input_filename)
         rerun_text, _, _ = text_from_rendered(rerun_rendered)
-        # Also inject page markers into the stability run
-        rerun_text = inject_page_markers(json_tree, rerun_text)
         stability_path  = os.path.join(verif_dir, "stability", f"{base_name}_run2.md")
         write_text(stability_path, rerun_text)
 
@@ -465,9 +372,10 @@ def main():
         "page_count_from_meta": len(meta_dict.get("page_stats", []) or []),
         "artifacts": {
             "markdown": {
-                "path":            os.path.relpath(md_path, output_directory),
-                "sha256":          sha256_text(markdown_text),
-                "page_markers":    True,
+                "path":   os.path.relpath(md_path, output_directory),
+                "sha256": sha256_text(markdown_text),
+                "note":   "Clean markdown — no page-marker comments. "
+                          "qa.py locates pages via pdf_text_by_page.json.",
             },
             "marker_metadata": {
                 "path": os.path.relpath(meta_path, output_directory),
@@ -485,6 +393,7 @@ def main():
             "pdf_text_by_page": {
                 "path":   os.path.relpath(pdf_text_path, output_directory),
                 "engine": pdf_text.get("engine"),
+                "note":   "Used by qa.py for page localization.",
             },
             "pdf_tables_by_page": {
                 "path":   os.path.relpath(pdf_tables_path, output_directory),
@@ -511,10 +420,11 @@ def main():
     print(markdown_text[:1500])
     print("\n--- block_type totals (from Marker JSON) ---")
     print(json.dumps(md_block_counts["total"], indent=2, ensure_ascii=False))
-    print(f"\n[OK] Markdown (with page markers) -> {md_path}")
+    print(f"\n[OK] Markdown (clean)             -> {md_path}")
     print(f"[OK] Marker metadata              -> {meta_path}")
     print(f"[OK] Marker JSON tree             -> {json_path}")
     print(f"[OK] Table bboxes                 -> {bbox_path}  ({len(table_bboxes)} tables)")
+    print(f"[OK] PDF text by page             -> {pdf_text_path}  (qa.py page localization)")
     print(f"[OK] Verification bundle          -> {verif_dir}")
     print(f"[OK] Manifest                     -> {manifest_path}")
     print(f"\n[NOTE] Page images not generated by parser.py.")

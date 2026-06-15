@@ -13,15 +13,20 @@ client = AzureOpenAI(
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
 )
 
-# ── Paths ─────────────────────────────────────────────────────────────────────────────────
-BASE = Path(__file__).parent
+# ── Paths ──────────────────────────────────────────────────────────────────────
+BASE            = Path(__file__).parent
 OUTPUT_DIR      = BASE / "hsbc_output"
 CONTEXT_PATH    = OUTPUT_DIR / "hsbc.md"
 REPORT_PATH     = OUTPUT_DIR / "verification" / "verification_report.json"
 PAGE_IMAGES_DIR = OUTPUT_DIR / "verification" / "page_images"
+PDF_TEXT_PATH   = OUTPUT_DIR / "verification" / "pdf_text_by_page.json"
 
 
-# ── Verification report loader ──────────────────────────────────────────────────────────────────────────
+# ── Loaders ────────────────────────────────────────────────────────────────────
+
+def load_context() -> str:
+    return CONTEXT_PATH.read_text(encoding="utf-8")
+
 
 def load_verification_report() -> dict | None:
     """Return the parsed verification_report.json, or None if not present."""
@@ -31,7 +36,20 @@ def load_verification_report() -> dict | None:
     return None
 
 
-# ── Hallucination / inaccuracy detection ─────────────────────────────────────────────────────────────
+def load_pdf_text_by_page() -> list[str]:
+    """
+    Load verification/pdf_text_by_page.json and return the list of per-page
+    text strings (1-based: index 0 == page 1).
+    Returns an empty list if the file is missing.
+    """
+    if not PDF_TEXT_PATH.exists():
+        return []
+    with open(PDF_TEXT_PATH, encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("pages", [])
+
+
+# ── Hallucination / inaccuracy detection ───────────────────────────────────────
 
 def get_flagged_pages(report: dict) -> set[int]:
     """
@@ -67,17 +85,33 @@ def get_flagged_pages(report: dict) -> set[int]:
     return flagged
 
 
-# ── LLM-based page localization ─────────────────────────────────────────────────────────────────────────
+# ── LLM-based page localization ────────────────────────────────────────────────
 
-def locate_relevant_pages(question: str, context: str, total_pages: int) -> list[int]:
+def locate_relevant_pages(question: str, pdf_pages: list[str]) -> list[int]:
     """
-    Ask the LLM to identify which page(s) of the document contain information
-    needed to answer the question.  Returns a sorted list of 1-based page numbers.
+    Use the per-page PDF text (from pdf_text_by_page.json) to ask the LLM
+    which page(s) contain the information needed to answer the question.
 
-    The markdown document produced by the parser contains page-break markers of
-    the form  <!-- Page N -->  that the LLM can use to locate sections.
-    If the LLM cannot identify specific pages it returns an empty list.
+    This approach is reliable because pdf_text_by_page.json is extracted
+    directly from the PDF (not from the Marker-rendered markdown), so it
+    is not affected by rendering bugs or marker-injection failures.
+
+    Returns a sorted list of 1-based page numbers.
+    If the LLM cannot identify specific pages it returns [].
     """
+    if not pdf_pages:
+        return []
+
+    total_pages = len(pdf_pages)
+
+    # Build a compact per-page digest (first 800 chars per page is enough
+    # for topic identification without blowing up the context window).
+    page_dump = "\n\n".join(
+        f"[Page {i}]\n{text[:800].strip()}"
+        for i, text in enumerate(pdf_pages, start=1)
+        if text.strip()
+    )
+
     response = client.chat.completions.create(
         model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
         messages=[
@@ -85,11 +119,11 @@ def locate_relevant_pages(question: str, context: str, total_pages: int) -> list
                 "role": "system",
                 "content": (
                     "You are a document navigation assistant. "
-                    "The user will give you a question and a Markdown document. "
-                    "The document contains page-break comments like <!-- Page 3 -->. "
+                    "You will be given a user question and excerpts of text "
+                    "extracted directly from each page of a PDF document. "
                     f"The document has {total_pages} pages total. "
-                    "Your task: identify which page number(s) contain the information "
-                    "needed to answer the question. "
+                    "Your task: identify which page number(s) contain the "
+                    "information needed to answer the question. "
                     "Reply with ONLY a JSON array of integers, e.g. [3] or [3,4]. "
                     "If you cannot determine the page(s), reply with []. "
                     "Do NOT include any explanation."
@@ -99,7 +133,7 @@ def locate_relevant_pages(question: str, context: str, total_pages: int) -> list
                 "role": "user",
                 "content": (
                     f"Question: {question}\n\n"
-                    f"Document:\n```markdown\n{context}\n```"
+                    f"Per-page PDF text:\n{page_dump}"
                 ),
             },
         ],
@@ -108,7 +142,6 @@ def locate_relevant_pages(question: str, context: str, total_pages: int) -> list
     )
 
     raw = response.choices[0].message.content.strip()
-    # Parse the JSON array robustly
     match = re.search(r"\[([\d,\s]*)\]", raw)
     if not match:
         return []
@@ -119,21 +152,22 @@ def locate_relevant_pages(question: str, context: str, total_pages: int) -> list
         return []
 
 
-# ── classify question ─────────────────────────────────────────────────────────────────────────────────────────
+# ── classify question ──────────────────────────────────────────────────────────
 
 def classify_question(
     question: str,
     flagged_pages: set[int],
     report: dict,
-    context: str,
+    pdf_pages: list[str],
 ) -> tuple[str, list[int]]:
     """
     Determine whether the question intersects with flagged pages.
 
     Strategy (in priority order):
       1. Extract explicit page numbers from the question text.
-      2. Ask the LLM to locate the relevant pages in the document.
-      3. Fall back to keyword overlap with flagged finding details.
+      2. Ask the LLM to locate the relevant pages using pdf_text_by_page.json.
+      3. Fall back to keyword overlap with flagged finding details
+         (scoped — returns only the matching flagged pages, not all of them).
 
     Returns
     -------
@@ -144,9 +178,9 @@ def classify_question(
     if not flagged_pages:
         return "safe", []
 
-    total_pages = report.get("page_count", {}).get("pdf", 0) or 21
+    total_pages = report.get("page_count", {}).get("pdf", 0) or len(pdf_pages) or 21
 
-    # ─── 1. Explicit page references in the question text ───
+    # ─── 1. Explicit page references in the question text ─────────────────────
     page_hint_re = re.compile(
         r"\b(?:page|p\.?|pg\.?)\s*(\d{1,3})|\b(\d{1,3})\s*(?:st|nd|rd|th)?\s*page\b",
         re.IGNORECASE,
@@ -162,28 +196,27 @@ def classify_question(
             return "flagged", flagged_hit
         return "safe", explicit_pages
 
-    # ─── 2. LLM-based page localization (the key fix) ───
-    llm_pages = locate_relevant_pages(question, context, total_pages)
+    # ─── 2. LLM-based page localization via pdf_text_by_page.json ─────────────
+    llm_pages = locate_relevant_pages(question, pdf_pages)
 
     if llm_pages:
         flagged_hit = [p for p in llm_pages if p in flagged_pages]
         safe_hit    = [p for p in llm_pages if p not in flagged_pages]
 
         if flagged_hit and not safe_hit:
-            # All relevant pages are flagged → refuse and return images
+            # All relevant pages are flagged → refuse and show images
             return "flagged", flagged_hit
 
         if flagged_hit and safe_hit:
-            # Some relevant pages are flagged, some are not → partial
-            return "unknown", flagged_hit   # only return the FLAGGED subset as images
+            # Mixed: some flagged, some safe → partial answer + images for flagged
+            return "unknown", flagged_hit
 
         # No relevant page is flagged → safe to answer
         return "safe", llm_pages
 
-    # ─── 3. Keyword-overlap fallback (conservative, but scoped to flagged pages only) ───
-    # Unlike the original code, we do NOT return ALL flagged pages as relevant;
-    # we just mark the classification as "unknown" without specific page images
-    # unless keyword overlap is very strong.
+    # ─── 3. Keyword-overlap fallback (scoped to flagged pages only) ───────────
+    # Does NOT return all flagged pages — only the ones whose finding
+    # detail text overlaps with the question words.
     flagged_details = " ".join(
         s.get("detail", "") for s in report.get("inaccurate_sections", [])
     ).lower()
@@ -191,8 +224,6 @@ def classify_question(
     overlap = q_words & set(re.findall(r"[a-z]{3,}", flagged_details))
 
     if len(overlap) >= 2:
-        # Return only the flagged pages whose detail text contains the overlapping words,
-        # not the entire flagged set.
         targeted: list[int] = []
         for section in report.get("inaccurate_sections", []):
             page = section.get("page")
@@ -208,12 +239,12 @@ def classify_question(
     return "unknown", []
 
 
-# ── Page-image lookup ───────────────────────────────────────────────────────────────────────────────────
+# ── Page-image lookup ──────────────────────────────────────────────────────────
 
 def find_page_images(pages: list[int]) -> list[Path]:
     """
     Return Path objects for every page image matching the given page numbers.
-    Supports common naming conventions produced by parser.py.
+    Supports common naming conventions produced by tableimg.py.
     """
     if not PAGE_IMAGES_DIR.exists():
         return []
@@ -246,13 +277,7 @@ def find_page_images(pages: list[int]) -> list[Path]:
     return unique
 
 
-# ── Context loader ────────────────────────────────────────────────────────────────────────────────────────
-
-def load_context() -> str:
-    return CONTEXT_PATH.read_text(encoding="utf-8")
-
-
-# ── LLM answer ──────────────────────────────────────────────────────────────────────────────────────────────
+# ── LLM answer ─────────────────────────────────────────────────────────────────
 
 def answerdirectly(question: str, context: str) -> str:
     response = client.chat.completions.create(
@@ -280,7 +305,7 @@ def answerdirectly(question: str, context: str) -> str:
     return response.choices[0].message.content
 
 
-# ── Main entry-point ──────────────────────────────────────────────────────────────────────────────────
+# ── Main entry-point ───────────────────────────────────────────────────────────
 
 def answer(question: str) -> dict:
     """
@@ -299,8 +324,9 @@ def answer(question: str) -> dict:
     "flagged"   Question clearly targets unreliable content; answer refused and
                 original page image(s) returned for manual calculation.
     """
-    context = load_context()
-    report  = load_verification_report()
+    context   = load_context()
+    report    = load_verification_report()
+    pdf_pages = load_pdf_text_by_page()   # per-page ground-truth text from PDF
 
     if report is None:
         return {
@@ -314,12 +340,11 @@ def answer(question: str) -> dict:
         }
 
     flagged_pages = get_flagged_pages(report)
-    # Pass context so classify_question can call the LLM locator
     classification, relevant_pages = classify_question(
-        question, flagged_pages, report, context
+        question, flagged_pages, report, pdf_pages
     )
 
-    # ── FLAGGED: question clearly targets unreliable content ───────────────────────────
+    # ── FLAGGED ────────────────────────────────────────────────────────────────
     if classification == "flagged":
         images = find_page_images(relevant_pages)
         flagged_findings = [
@@ -352,11 +377,10 @@ def answer(question: str) -> dict:
             "warning": warning,
         }
 
-    # ── UNKNOWN / PARTIAL: possible overlap with flagged content ───────────────────────
+    # ── UNKNOWN / PARTIAL ──────────────────────────────────────────────────────
     if classification == "unknown":
-        # relevant_pages here contains only the FLAGGED pages that touch the question.
-        images      = find_page_images(relevant_pages)
-        llm_answer  = answerdirectly(question, context)
+        images     = find_page_images(relevant_pages)
+        llm_answer = answerdirectly(question, context)
 
         pages_str = str(sorted(relevant_pages)) if relevant_pages else "(unknown)"
         warning = (
@@ -374,7 +398,7 @@ def answer(question: str) -> dict:
             "warning": warning,
         }
 
-    # ── SAFE: no overlap with flagged content ──────────────────────────────────────────────────
+    # ── SAFE ───────────────────────────────────────────────────────────────────
     return {
         "status": "answered",
         "answer": answerdirectly(question, context),
@@ -383,7 +407,7 @@ def answer(question: str) -> dict:
     }
 
 
-# ── CLI helper ────────────────────────────────────────────────────────────────────────────────────────────
+# ── CLI helper ─────────────────────────────────────────────────────────────────
 
 def _print_result(result: dict) -> None:
     """Pretty-print an answer() result dict to stdout."""
