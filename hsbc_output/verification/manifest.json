@@ -18,7 +18,8 @@
   "artifacts": {
     "markdown": {
       "path": "hsbc.md",
-      "sha256": "2452b92bd63d9d86c86cee180ad7de252ae00aa5c306389b4a87d1546e0032bd"
+      "sha256": "6a34661420f11c26ab6e25e4004ff7ad5cedb4b58bca24c6580299b4e1fdd16e",
+      "page_markers": true
     },
     "marker_metadata": {
       "path": "hsbc_meta.json"
