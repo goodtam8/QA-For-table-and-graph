@@ -1,12 +1,12 @@
 {
   "document": "hsbc",
-  "overall_score": 82.7,
+  "overall_score": 73.9,
   "route": "MANUAL_REVIEW",
   "scores": {
     "text": 94.2,
     "structure": 76.0,
     "cleanliness": 78.0,
-    "table": 71.7
+    "table": 38.0
   },
   "page_count": {
     "pdf": 21,
@@ -33,7 +33,7 @@
   },
   "severity_counts": {
     "critical": 10,
-    "major": 15,
+    "major": 30,
     "minor": 2
   },
   "per_page_text_recall": [
@@ -456,14 +456,6 @@
       "dimension": "table",
       "severity": "major",
       "table_index": 1,
-      "row": 16,
-      "col": 1,
-      "detail": "Table 1 row 'interbank transfer' col 1: cell='•' looks like a corrupted tick (column is 13/18 valid checkmarks)."
-    },
-    {
-      "dimension": "table",
-      "severity": "major",
-      "table_index": 1,
       "row": 17,
       "col": 1,
       "detail": "Table 1 row 'Foreign Currency' col 1: cell=',' looks like a corrupted tick (column is 13/18 valid checkmarks)."
@@ -488,14 +480,6 @@
       "dimension": "table",
       "severity": "major",
       "table_index": 1,
-      "row": 16,
-      "col": 2,
-      "detail": "Table 1 row 'interbank transfer' col 2: cell='•' looks like a corrupted tick (column is 12/17 valid checkmarks)."
-    },
-    {
-      "dimension": "table",
-      "severity": "major",
-      "table_index": 1,
       "row": 17,
       "col": 2,
       "detail": "Table 1 row 'Foreign Currency' col 2: cell=',' looks like a corrupted tick (column is 12/17 valid checkmarks)."
@@ -515,6 +499,185 @@
       "row": 18,
       "col": 5,
       "detail": "Table 1 row 'Exchange Services' col 5: cell='<b>V</b> -' looks like a corrupted tick (column is 9/11 valid checkmarks)."
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 7,
+      "row": 10,
+      "col": 2,
+      "detail": "Table 7 row 'below 500 coins' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 7,
+      "row": 16,
+      "col": 2,
+      "detail": "Table 7 row '• up to 30 cheques' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 7,
+      "row": 19,
+      "col": 2,
+      "detail": "Table 7 row 'foreign currency notes deposits/withdrawals' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 8,
+      "row": 17,
+      "col": 2,
+      "detail": "Table 8 row 'account history report (for passbook savings and t' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 8,
+      "row": 20,
+      "col": 2,
+      "detail": "Table 8 row 'each copy (not page)' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 8,
+      "row": 26,
+      "col": 5,
+      "detail": "Table 8 row '• via hsbc branches³' col 5: isolated short fragment 'ved' — likely a word split across cell boundaries.",
+      "fragment": "ved",
+      "left_cell_tail": "Wai"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 17,
+      "col": 0,
+      "detail": "Table 15 row 'item c' col 0: likely cell-boundary bleed — left cell ends with 'C', right cell starts with 'harge'. Reconstructed word candidate: 'Charge'.",
+      "left_cell_tail": "Item C",
+      "right_cell_head": "harge",
+      "candidate_word": "Charge"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 17,
+      "col": 1,
+      "detail": "Table 15 row 'item c' col 1: isolated short fragment 'harge' — likely a word split across cell boundaries. Left cell ends with 'C'.",
+      "fragment": "harge",
+      "left_cell_tail": "Item C"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 19,
+      "col": 0,
+      "detail": "Table 15 row 'hsbc credit card/ bank account f' col 0: likely cell-boundary bleed — left cell ends with 'F', right cell starts with 'ree'. Reconstructed word candidate: 'Free'.",
+      "left_cell_tail": "/ Bank Account     F",
+      "right_cell_head": "ree",
+      "candidate_word": "Free"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 19,
+      "col": 1,
+      "detail": "Table 15 row 'hsbc credit card/ bank account f' col 1: isolated short fragment 'ree' — likely a word split across cell boundaries. Left cell ends with 'F'.",
+      "fragment": "ree",
+      "left_cell_tail": "/ Bank Account     F"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 20,
+      "col": 0,
+      "detail": "Table 15 row 'non-hsbc credit card/ bank account f' col 0: likely cell-boundary bleed — left cell ends with 'F', right cell starts with 'ree'. Reconstructed word candidate: 'Free'.",
+      "left_cell_tail": "/ Bank Account     F",
+      "right_cell_head": "ree",
+      "candidate_word": "Free"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 20,
+      "col": 1,
+      "detail": "Table 15 row 'non-hsbc credit card/ bank account f' col 1: isolated short fragment 'ree' — likely a word split across cell boundaries. Left cell ends with 'F'.",
+      "fragment": "ree",
+      "left_cell_tail": "/ Bank Account     F"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 16,
+      "row": 9,
+      "col": 3,
+      "detail": "Table 16 row 'mortgage/deed of assignment/sale and purchase agre' col 3: isolated short fragment 'set' — likely a word split across cell boundaries.",
+      "fragment": "set",
+      "left_cell_tail": "HK\\$100 per s"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 19,
+      "row": 4,
+      "col": 5,
+      "detail": "Table 19 row 'late payment charge (minimum payment)' col 5: isolated short fragment 'cable' — likely a word split across cell boundaries.",
+      "fragment": "cable",
+      "left_cell_tail": "Not appli"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 22,
+      "row": 3,
+      "col": 2,
+      "detail": "Table 22 row 'annual fee' col 2: isolated short fragment 'ved' — likely a word split across cell boundaries.",
+      "fragment": "ved",
+      "left_cell_tail": "Wa"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 22,
+      "row": 4,
+      "col": 2,
+      "detail": "Table 22 row 'overseas atm cash withdrawal 1, 2, 3 from the hsbc' col 2: isolated short fragment 'ved' — likely a word split across cell boundaries.",
+      "fragment": "ved",
+      "left_cell_tail": "Wai"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "detail": "PDF table fragment 22 row 4: best markdown row match has only 43% token recall. PDF row: ' | hk100 hk100 hk200 per set hk150 hk$100 | hk50 hk50 hk100 per set hk75 hk$50 |'. Best MD row: 'mortgage/deed of assignment/sale and purchase agreement/ deed of mutual covenant'.",
+      "pdf_row_preview": " | hk100 hk100 hk200 per set hk150 hk$100 | hk50 hk50 hk100 per set hk75 hk$50 |",
+      "best_md_row_preview": "mortgage/deed of assignment/sale and purchase agreement/ deed of mutual covenant",
+      "per_row_recall": 0.429,
+      "missing_tokens": [
+        "50",
+        "hk100",
+        "hk150",
+        "hk200",
+        "hk50",
+        "hk75"
+      ]
     }
   ],
   "findings": [
@@ -914,14 +1077,6 @@
       "dimension": "table",
       "severity": "major",
       "table_index": 1,
-      "row": 16,
-      "col": 1,
-      "detail": "Table 1 row 'interbank transfer' col 1: cell='•' looks like a corrupted tick (column is 13/18 valid checkmarks)."
-    },
-    {
-      "dimension": "table",
-      "severity": "major",
-      "table_index": 1,
       "row": 17,
       "col": 1,
       "detail": "Table 1 row 'Foreign Currency' col 1: cell=',' looks like a corrupted tick (column is 13/18 valid checkmarks)."
@@ -946,14 +1101,6 @@
       "dimension": "table",
       "severity": "major",
       "table_index": 1,
-      "row": 16,
-      "col": 2,
-      "detail": "Table 1 row 'interbank transfer' col 2: cell='•' looks like a corrupted tick (column is 12/17 valid checkmarks)."
-    },
-    {
-      "dimension": "table",
-      "severity": "major",
-      "table_index": 1,
       "row": 17,
       "col": 2,
       "detail": "Table 1 row 'Foreign Currency' col 2: cell=',' looks like a corrupted tick (column is 12/17 valid checkmarks)."
@@ -973,6 +1120,185 @@
       "row": 18,
       "col": 5,
       "detail": "Table 1 row 'Exchange Services' col 5: cell='<b>V</b> -' looks like a corrupted tick (column is 9/11 valid checkmarks)."
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 7,
+      "row": 10,
+      "col": 2,
+      "detail": "Table 7 row 'below 500 coins' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 7,
+      "row": 16,
+      "col": 2,
+      "detail": "Table 7 row '• up to 30 cheques' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 7,
+      "row": 19,
+      "col": 2,
+      "detail": "Table 7 row 'foreign currency notes deposits/withdrawals' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 8,
+      "row": 17,
+      "col": 2,
+      "detail": "Table 8 row 'account history report (for passbook savings and t' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 8,
+      "row": 20,
+      "col": 2,
+      "detail": "Table 8 row 'each copy (not page)' col 2: isolated short fragment 'ed' — likely a word split across cell boundaries.",
+      "fragment": "ed",
+      "left_cell_tail": "Waive"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 8,
+      "row": 26,
+      "col": 5,
+      "detail": "Table 8 row '• via hsbc branches³' col 5: isolated short fragment 'ved' — likely a word split across cell boundaries.",
+      "fragment": "ved",
+      "left_cell_tail": "Wai"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 17,
+      "col": 0,
+      "detail": "Table 15 row 'item c' col 0: likely cell-boundary bleed — left cell ends with 'C', right cell starts with 'harge'. Reconstructed word candidate: 'Charge'.",
+      "left_cell_tail": "Item C",
+      "right_cell_head": "harge",
+      "candidate_word": "Charge"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 17,
+      "col": 1,
+      "detail": "Table 15 row 'item c' col 1: isolated short fragment 'harge' — likely a word split across cell boundaries. Left cell ends with 'C'.",
+      "fragment": "harge",
+      "left_cell_tail": "Item C"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 19,
+      "col": 0,
+      "detail": "Table 15 row 'hsbc credit card/ bank account f' col 0: likely cell-boundary bleed — left cell ends with 'F', right cell starts with 'ree'. Reconstructed word candidate: 'Free'.",
+      "left_cell_tail": "/ Bank Account     F",
+      "right_cell_head": "ree",
+      "candidate_word": "Free"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 19,
+      "col": 1,
+      "detail": "Table 15 row 'hsbc credit card/ bank account f' col 1: isolated short fragment 'ree' — likely a word split across cell boundaries. Left cell ends with 'F'.",
+      "fragment": "ree",
+      "left_cell_tail": "/ Bank Account     F"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 20,
+      "col": 0,
+      "detail": "Table 15 row 'non-hsbc credit card/ bank account f' col 0: likely cell-boundary bleed — left cell ends with 'F', right cell starts with 'ree'. Reconstructed word candidate: 'Free'.",
+      "left_cell_tail": "/ Bank Account     F",
+      "right_cell_head": "ree",
+      "candidate_word": "Free"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 15,
+      "row": 20,
+      "col": 1,
+      "detail": "Table 15 row 'non-hsbc credit card/ bank account f' col 1: isolated short fragment 'ree' — likely a word split across cell boundaries. Left cell ends with 'F'.",
+      "fragment": "ree",
+      "left_cell_tail": "/ Bank Account     F"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 16,
+      "row": 9,
+      "col": 3,
+      "detail": "Table 16 row 'mortgage/deed of assignment/sale and purchase agre' col 3: isolated short fragment 'set' — likely a word split across cell boundaries.",
+      "fragment": "set",
+      "left_cell_tail": "HK\\$100 per s"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 19,
+      "row": 4,
+      "col": 5,
+      "detail": "Table 19 row 'late payment charge (minimum payment)' col 5: isolated short fragment 'cable' — likely a word split across cell boundaries.",
+      "fragment": "cable",
+      "left_cell_tail": "Not appli"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 22,
+      "row": 3,
+      "col": 2,
+      "detail": "Table 22 row 'annual fee' col 2: isolated short fragment 'ved' — likely a word split across cell boundaries.",
+      "fragment": "ved",
+      "left_cell_tail": "Wa"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "table_index": 22,
+      "row": 4,
+      "col": 2,
+      "detail": "Table 22 row 'overseas atm cash withdrawal 1, 2, 3 from the hsbc' col 2: isolated short fragment 'ved' — likely a word split across cell boundaries.",
+      "fragment": "ved",
+      "left_cell_tail": "Wai"
+    },
+    {
+      "dimension": "table",
+      "severity": "major",
+      "detail": "PDF table fragment 22 row 4: best markdown row match has only 43% token recall. PDF row: ' | hk100 hk100 hk200 per set hk150 hk$100 | hk50 hk50 hk100 per set hk75 hk$50 |'. Best MD row: 'mortgage/deed of assignment/sale and purchase agreement/ deed of mutual covenant'.",
+      "pdf_row_preview": " | hk100 hk100 hk200 per set hk150 hk$100 | hk50 hk50 hk100 per set hk75 hk$50 |",
+      "best_md_row_preview": "mortgage/deed of assignment/sale and purchase agreement/ deed of mutual covenant",
+      "per_row_recall": 0.429,
+      "missing_tokens": [
+        "50",
+        "hk100",
+        "hk150",
+        "hk200",
+        "hk50",
+        "hk75"
+      ]
     },
     {
       "severity": "minor",
