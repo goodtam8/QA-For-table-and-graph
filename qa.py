@@ -122,8 +122,13 @@ def locate_relevant_pages(question: str, pdf_pages: list[str]) -> list[int]:
                     "You will be given a user question and excerpts of text "
                     "extracted directly from each page of a PDF document. "
                     f"The document has {total_pages} pages total. "
-                    "Your task: identify which page number(s) contain the "
-                    "information needed to answer the question. "
+                    "Your task: identify which page number(s) DIRECTLY contain "
+                    "the specific data needed to answer the question. "
+                    "Only include a page if that page itself contains the answer, "
+                    "not pages that merely mention the same topic in passing. "
+                    "If the answer is on one page, return only that page. "
+                    "Prefer fewer pages over more; only include additional pages "
+                    "if the answer genuinely spans multiple pages. "
                     "Reply with ONLY a JSON array of integers, e.g. [3] or [3,4]. "
                     "If you cannot determine the page(s), reply with []. "
                     "Do NOT include any explanation."
@@ -138,7 +143,7 @@ def locate_relevant_pages(question: str, pdf_pages: list[str]) -> list[int]:
             },
         ],
         temperature=0,
-        max_tokens=64,
+        max_tokens=32,
     )
 
     raw = response.choices[0].message.content.strip()
@@ -204,7 +209,9 @@ def classify_question(
         safe_hit    = [p for p in llm_pages if p not in flagged_pages]
 
         if flagged_hit and not safe_hit:
-            # All relevant pages are flagged → refuse and show images
+            # All relevant pages are flagged → refuse and show images.
+            # Surface only the flagged pages that are truly relevant
+            # (the LLM already narrowed these down, so trust the result).
             return "flagged", flagged_hit
 
         if flagged_hit and safe_hit:
