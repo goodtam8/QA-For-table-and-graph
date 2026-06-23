@@ -52,38 +52,30 @@ def load_pdf_text_by_page() -> list[str]:
 # ── Hallucination / inaccuracy detection ───────────────────────────────────────
 
 def get_flagged_pages(report: dict) -> set[int]:
-    """
-    Collect every page number that the verifier has flagged as inaccurate.
-
-    Sources examined:
-      • report["inaccurate_sections"]  – per-page dimensional flags
-      • report["findings"]             – global findings that carry a page key
-      • report["per_page_text_recall"] – pages whose text recall is critically low
-      • report["route"]                – if MANUAL_REVIEW, everything is suspect
-    """
     flagged: set[int] = set()
 
+    # Flag pages explicitly listed in inaccurate_sections
     for section in report.get("inaccurate_sections", []):
         page = section.get("page")
         if page is not None:
             flagged.add(int(page))
 
+    # Flag pages explicitly listed in findings
     for finding in report.get("findings", []):
         page = finding.get("page")
         if page is not None:
             flagged.add(int(page))
 
+    # Flag pages with critically low text recall
     for i, r in enumerate(report.get("per_page_text_recall", []), start=1):
         if isinstance(r, (int, float)) and r < 0.35:
             flagged.add(i)
 
-    if report.get("route") == "MANUAL_REVIEW":
-        n_pages = report.get("page_count", {}).get("pdf", 0)
-        if n_pages:
-            flagged.update(range(1, n_pages + 1))
+    # ❌ REMOVE the MANUAL_REVIEW block entirely, or demote it to a warning:
+    # if report.get("route") == "MANUAL_REVIEW":
+    #     ...  ← this was flagging all pages including clean ones
 
     return flagged
-
 
 # ── LLM-based page localization ────────────────────────────────────────────────
 
