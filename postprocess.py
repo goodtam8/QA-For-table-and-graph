@@ -1,30 +1,13 @@
+#!/usr/bin/env python3
 """
 postprocess.py — Standalone markdown table post-processor.
 
-Applies all PP-01 through PP-13 rules to an existing Markdown file
-produced by parser.py (or any compatible converter).  Does NOT require
-Marker, Azure OpenAI, or the original PDF.
+Applies the same PP-01 through PP-13 rule-based corrections as parser.py,
+but reads an ALREADY-GENERATED markdown file and writes a corrected version.
+No Marker, no PDF, no Azure — just text in, text out.
 
-Usage:
-    python postprocess.py --input ./hsbc_output/hsbc.md
-    python postprocess.py --input ./hsbc_output/hsbc.md --output ./hsbc_output/hsbc_pp.md
-    python postprocess.py --input ./hsbc_output/hsbc.md --inplace
-    python postprocess.py --input ./hsbc_output/hsbc.md --inplace --backup
-
-Arguments:
-    --input        Path to the source Markdown file (required).
-    --output       Path to write the post-processed Markdown.
-                   Defaults to <stem>_pp.md alongside the input file.
-    --inplace      Overwrite the input file with the processed output.
-                   (Ignores --output when set.)
-    --backup       When used with --inplace, write a backup copy
-                   as <stem>_backup.md before overwriting.
-    --no-manifest  Skip updating / creating the manifest.json in the
-                   adjacent verification/ folder.
-    --verbose      Print per-table processing details.
-
-Post-processing rules
----------------------
+Post-processing rules applied
+------------------------------
   PP-01  Cell boundary bleed    — merge half-words split across adjacent cells
   PP-02  Merged cell collapse   — detect & flag multi-value cells for splitting
   PP-03  Trailing artifact      — strip stray trailing punctuation/artifacts
@@ -38,23 +21,26 @@ Post-processing rules
   PP-11  Section header rows    — lift section-label-only rows above the table
   PP-12  HTML remnants          — strip residual <br/> / <ul>/<li> in cells
   PP-13  Footnote annotation    — normalise corrupted *-*-* / asterisk markers
+
+Run:
+    python postprocess.py --input hsbc.md
+    python postprocess.py --input hsbc.md --output hsbc_pp.md
+    python postprocess.py --input ./hsbc_output/hsbc.md --in-place
 """
 
 import os
 import re
-import json
-import hashlib
 import argparse
-from collections import Counter, defaultdict
-from typing import List, Tuple, Optional
+import shutil
+from typing import List
 
 
 # --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
-
-def sha256_text(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()
+def read_text(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def write_text(path: str, text: str) -> None:
@@ -63,50 +49,41 @@ def write_text(path: str, text: str) -> None:
         f.write(text)
 
 
-def read_text(path: str) -> str:
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
-
-
 # --------------------------------------------------------------------------- #
-# Regex patterns  (identical to parser.py)
+# Regex constants (identical to parser.py)
 # --------------------------------------------------------------------------- #
-
 _HTML_INLINE = re.compile(
-    r"<(br|br/|br />|/?ul|/?li|/?ol|/?p|del|/?del|/?b|/?i|/?strong|/?em"
-    r"|sup|/?sup|sub|/?sub)[^>]*>",
+    r"<(br|br/|br />|/?ul|/?li|/?ol|/?p|del|/?del|/?b|/?i|/?strong|/?em|sup|/?sup|sub|/?sub)[^>]*>",
     re.IGNORECASE,
 )
-_LONE_JUNK_CHARS = re.compile(r"^[,\\/\|\.]{1,2}$")
+_LONE_JUNK_CHARS = re.compile(r"^[,\\/|\.]{1,2}$")
 _WORD_FRAGMENT   = re.compile(r"[a-zA-Z]{2,}$")
 _WORD_COMPLETION = re.compile(r"^[a-zA-Z]{2,}")
 _FOOTNOTE_NOISE  = re.compile(r"\*\s*[-–]\s*\*")
-_TABLE_BLOCK_RE  = re.compile(r"((?:^\|[^\n]+\n)+)", re.MULTILINE)
 
 
 # --------------------------------------------------------------------------- #
 # Table parser / renderer
 # --------------------------------------------------------------------------- #
-
-def _parse_md_table(block: str) -> List[Optional[List[str]]]:
-    rows: List[Optional[List[str]]] = []
+def _parse_md_table(block: str) -> List[List[str]]:
+    rows = []
     for line in block.strip().splitlines():
         line = line.strip()
         if not line.startswith("|"):
             continue
         if re.match(r"^\|[-:\s|]+\|$", line):
-            rows.append(None)          # separator sentinel
+            rows.append(None)   # separator sentinel
             continue
         cells = [c.strip() for c in line.strip("|").split("|")]
         rows.append(cells)
     return rows
 
 
-def _render_md_table(rows: List[Optional[List[str]]]) -> str:
+def _render_md_table(rows: List[List[str]]) -> str:
     if not rows:
         return ""
-    sep_idx = None
-    data_rows: List[Tuple[int, List[str]]] = []
+    sep_idx   = None
+    data_rows = []
     for i, r in enumerate(rows):
         if r is None:
             sep_idx = i
@@ -115,23 +92,22 @@ def _render_md_table(rows: List[Optional[List[str]]]) -> str:
     if not data_rows:
         return ""
 
-    col_count  = max(len(r) for _, r in data_rows)
-    lines: List[str] = []
+    col_count    = max(len(r) for _, r in data_rows)
+    lines        = []
     inserted_sep = False
     for i, row in data_rows:
         padded = row + [""] * (col_count - len(row))
         lines.append("| " + " | ".join(padded) + " |")
         if sep_idx is not None and i == sep_idx - 1 and not inserted_sep:
-            lines.append("|" + "|".join([" --- " for _ in range(col_count)]) + "|")
+            lines.append("|" + "|".join([" --- "] * col_count) + "|")
             inserted_sep = True
     if not inserted_sep and len(lines) > 1:
-        sep_line = "|" + "|".join([" --- " for _ in range(col_count)]) + "|"
-        lines.insert(1, sep_line)
+        lines.insert(1, "|" + "|".join([" --- "] * col_count) + "|")
     return "\n".join(lines)
 
 
 # --------------------------------------------------------------------------- #
-# Individual fixers  (PP-01 … PP-13)
+# Individual cell / row fixers  (PP rules)
 # --------------------------------------------------------------------------- #
 
 def _fix_html_remnants(cells: List[str]) -> List[str]:
@@ -139,28 +115,13 @@ def _fix_html_remnants(cells: List[str]) -> List[str]:
     out = []
     for c in cells:
         cleaned = _HTML_INLINE.sub(" ", c)
-        out.append(re.sub(r"\s{2,}", " ", cleaned).strip())
-    return out
-
-
-def _fix_corrupted_symbols(cells: List[str]) -> List[str]:
-    """PP-04 + PP-13: normalise ✓/✗/bullet substitutions and footnote noise."""
-    out = []
-    for c in cells:
-        f = c
-        f = re.sub(r"✓\s*[_\.]", "✓", f)
-        f = re.sub(r"[_\.]\s*✓", "✓", f)
-        f = re.sub(r"✗\s*[_\.]", "✗", f)
-        f = re.sub(r"•\s*(?=[,\|])", "", f)
-        f = re.sub(r"<b>([A-Z])</b>\s*\.", r"", f)
-        f = re.sub(r"aived\s*//", "Waived", f)
-        f = _FOOTNOTE_NOISE.sub("*", f)      # PP-13
-        out.append(f.strip())
+        cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
+        out.append(cleaned)
     return out
 
 
 def _fix_trailing_artifact(cells: List[str]) -> List[str]:
-    """PP-03: strip stray trailing punctuation; preserve section codes (A1., G3.)."""
+    """PP-03: remove stray trailing punctuation, preserve section codes like A1."""
     out = []
     for c in cells:
         if re.match(r"^[A-ZЀ-ӿ]?\d*[A-Z]?\d*\.\s*$", c, re.UNICODE):
@@ -173,16 +134,30 @@ def _fix_trailing_artifact(cells: List[str]) -> List[str]:
     return out
 
 
+def _fix_corrupted_symbols(cells: List[str]) -> List[str]:
+    """PP-04: normalise corrupted ✓/✗/bullet substitutions."""
+    out = []
+    for c in cells:
+        fixed = c
+        fixed = re.sub(r"✓\s*[_\.]", "✓", fixed)
+        fixed = re.sub(r"[_\.]\s*✓", "✓", fixed)
+        fixed = re.sub(r"✗\s*[_\.]", "✗", fixed)
+        fixed = re.sub(r"•\s*(?=[,|])", "", fixed)
+        fixed = re.sub(r"<b>([A-Z])</b>\s*\.", r"", fixed)
+        fixed = re.sub(r"aived\s*//", "Waived", fixed)
+        fixed = _FOOTNOTE_NOISE.sub("*", fixed)
+        out.append(fixed.strip())
+    return out
+
+
 def _fix_lone_junk(cells: List[str]) -> List[str]:
-    """PP-10: replace lone comma/backslash/pipe cells with empty string."""
+    """PP-10: replace lone junk chars with empty string."""
     return ["" if _LONE_JUNK_CHARS.match(c) else c for c in cells]
 
 
-def _fix_cell_boundary_bleed(
-    rows: List[Optional[List[str]]],
-) -> List[Optional[List[str]]]:
-    """PP-01: merge words split across adjacent cells."""
-    out: List[Optional[List[str]]] = []
+def _fix_cell_boundary_bleed(rows: List[List[str]]) -> List[List[str]]:
+    """PP-01: merge half-words split across adjacent cells."""
+    out = []
     for row in rows:
         if row is None:
             out.append(row)
@@ -192,8 +167,8 @@ def _fix_cell_boundary_bleed(
         while i < len(new_row) - 1:
             left  = new_row[i].strip()
             right = new_row[i + 1].strip()
-            lm = _WORD_FRAGMENT.search(left)
-            rm = _WORD_COMPLETION.match(right)
+            lm    = _WORD_FRAGMENT.search(left)
+            rm    = _WORD_COMPLETION.match(right)
             if lm and rm:
                 left_frag  = lm.group(0)
                 right_frag = rm.group(0)
@@ -209,17 +184,15 @@ def _fix_cell_boundary_bleed(
     return out
 
 
-def _fix_row_split(
-    rows: List[Optional[List[str]]],
-) -> List[Optional[List[str]]]:
-    """PP-05: rejoin rows where label ends in an incomplete phrase."""
-    INCOMPLETE = re.compile(
+def _fix_row_split(rows: List[List[str]]) -> List[List[str]]:
+    """PP-05: rejoin broken label rows where next row's data cells are all empty."""
+    INCOMPLETE_ENDINGS = re.compile(
         r"(and|or|of|for|to|in|on|at|by|the|a|an|with|from|not|using"
         r"|per|each|where|if|via|transfer|payment|service|account"
         r"|interbank|mortgage|plus)\s*$",
         re.IGNORECASE,
     )
-    out: List[Optional[List[str]]] = []
+    out: List[List[str]] = []
     i = 0
     while i < len(rows):
         row = rows[i]
@@ -228,11 +201,11 @@ def _fix_row_split(
             i += 1
             continue
         if i + 1 < len(rows) and rows[i + 1] is not None:
-            next_row    = rows[i + 1]
-            label0      = row[0].strip() if row else ""
-            label1      = next_row[0].strip() if next_row else ""
+            next_row        = rows[i + 1]
+            label0          = row[0].strip() if row else ""
+            label1          = next_row[0].strip() if next_row else ""
             non_label_empty = all(not c.strip() for c in next_row[1:]) if len(next_row) > 1 else False
-            if INCOMPLETE.search(label0) and non_label_empty and label1:
+            if INCOMPLETE_ENDINGS.search(label0) and non_label_empty and label1:
                 merged    = list(row)
                 merged[0] = label0 + " " + label1
                 out.append(merged)
@@ -244,29 +217,27 @@ def _fix_row_split(
 
 
 def _fix_extra_empty_columns(
-    header: List[str],
-    data_rows: List[Optional[List[str]]],
-) -> Tuple[List[str], List[Optional[List[str]]]]:
-    """PP-08: drop ghost columns (empty header + all-empty data)."""
+    header: List[str], data_rows: List[List[str]]
+) -> tuple:
+    """PP-08: drop ghost columns (empty header AND empty data)."""
     if not header:
         return header, data_rows
     col_count = len(header)
-    keep = []
+    keep      = []
     for col_idx in range(col_count):
         if header[col_idx].strip():
             keep.append(col_idx)
             continue
         col_has_data = any(
             col_idx < len(r) and r[col_idx].strip()
-            for r in data_rows
-            if r is not None
+            for r in data_rows if r is not None
         )
         if col_has_data:
             keep.append(col_idx)
     if len(keep) == col_count:
         return header, data_rows
     new_header = [header[k] for k in keep]
-    new_data: List[Optional[List[str]]] = []
+    new_data   = []
     for row in data_rows:
         if row is None:
             new_data.append(row)
@@ -276,7 +247,7 @@ def _fix_extra_empty_columns(
 
 
 def _is_phantom_row(cells: List[str], col_count: int) -> bool:
-    """PP-06: OCR-noise rows — long prose in label col, all other cells empty."""
+    """PP-06: long prose label + all other cells empty → OCR-noise phantom row."""
     if not cells:
         return False
     label       = cells[0].strip()
@@ -285,7 +256,7 @@ def _is_phantom_row(cells: List[str], col_count: int) -> bool:
 
 
 def _is_caption_row(cells: List[str]) -> bool:
-    """PP-07: prose first-row absorbed as caption."""
+    """PP-07: prose-only first row with remaining cells empty → absorbed caption."""
     if not cells:
         return False
     label       = cells[0].strip()
@@ -294,12 +265,10 @@ def _is_caption_row(cells: List[str]) -> bool:
     return other_empty and (word_count >= 5 or "<br" in label.lower())
 
 
-def _fix_section_header_rows(
-    rows: List[Optional[List[str]]],
-) -> Tuple[List[str], List[Optional[List[str]]]]:
-    """PP-11: lift section-label-only rows as headings above the table."""
-    lifted: List[str] = []
-    remaining: List[Optional[List[str]]] = []
+def _fix_section_header_rows(rows: List[List[str]]) -> tuple:
+    """PP-11: lift section-title-only rows out of the table body."""
+    lifted    = []
+    remaining = []
     for row in rows:
         if row is None:
             remaining.append(row)
@@ -314,15 +283,11 @@ def _fix_section_header_rows(
 
 
 # --------------------------------------------------------------------------- #
-# Master per-table processor
+# Main table post-processor block
 # --------------------------------------------------------------------------- #
-
-def _postprocess_table_block(
-    block: str,
-    verbose: bool = False,
-) -> Tuple[str, List[str]]:
-    """Apply all PP rules to one markdown table block.
-    Returns (processed_markdown, lifted_headings)."""
+def _postprocess_table_block(block: str) -> tuple:
+    """Apply all PP rules to a single markdown table block.
+    Returns (processed_markdown: str, lifted_headings: list[str])."""
     rows = _parse_md_table(block)
     if not rows:
         return block, []
@@ -331,207 +296,171 @@ def _postprocess_table_block(
     if header_idx is None:
         return block, []
 
-    # Step 1 — per-cell fixes
-    fixed: List[Optional[List[str]]] = []
+    # --- Step 1: per-cell fixes ---------------------------------------------
+    fixed_rows = []
     for row in rows:
         if row is None:
-            fixed.append(None)
+            fixed_rows.append(None)
             continue
         row = _fix_html_remnants(row)
         row = _fix_corrupted_symbols(row)
         row = _fix_trailing_artifact(row)
         row = _fix_lone_junk(row)
-        fixed.append(row)
+        fixed_rows.append(row)
 
-    # Step 2 — cell boundary bleed
-    fixed = _fix_cell_boundary_bleed(fixed)
+    # --- Step 2: cell boundary bleed ----------------------------------------
+    fixed_rows = _fix_cell_boundary_bleed(fixed_rows)
 
-    # Step 3 — row-split repair
-    fixed = _fix_row_split(fixed)
+    # --- Step 3: row-split repair -------------------------------------------
+    fixed_rows = _fix_row_split(fixed_rows)
 
-    # Step 4 — lift section header rows
-    lifted, fixed = _fix_section_header_rows(fixed)
+    # --- Step 4: lift section header rows (PP-11) ---------------------------
+    lifted, fixed_rows = _fix_section_header_rows(fixed_rows)
 
-    # Step 5 — remove phantom content rows
-    col_count = max((len(r) for r in fixed if r is not None), default=1)
-    clean: List[Optional[List[str]]] = []
-    for row in fixed:
+    # --- Step 5: remove phantom content rows (PP-06) ------------------------
+    col_count  = max((len(r) for r in fixed_rows if r is not None), default=1)
+    clean_rows = []
+    for row in fixed_rows:
         if row is None:
-            clean.append(row)
+            clean_rows.append(row)
             continue
         if _is_phantom_row(row, col_count):
-            if verbose:
-                print(f"  [PP-06] Dropped phantom row: {row[0][:60]!r}")
-            continue
-        clean.append(row)
-    fixed = clean
+            continue  # drop
+        clean_rows.append(row)
+    fixed_rows = clean_rows
 
-    # Step 6 — caption row extraction
-    extracted_caption: Optional[str] = None
-    if fixed and fixed[0] is not None and _is_caption_row(fixed[0]):
-        extracted_caption = fixed[0][0].strip()
-        if verbose:
-            print(f"  [PP-07] Extracted caption: {extracted_caption[:60]!r}")
-        fixed = fixed[1:]
+    # --- Step 6: caption row extraction (PP-07) -----------------------------
+    extracted_caption = None
+    if fixed_rows and fixed_rows[0] is not None:
+        if _is_caption_row(fixed_rows[0]):
+            extracted_caption = fixed_rows[0][0].strip()
+            fixed_rows        = fixed_rows[1:]
 
-    # Step 7 — drop ghost empty columns
-    non_sep = [r for r in fixed if r is not None]
+    # --- Step 7: drop ghost empty columns (PP-08) ---------------------------
+    non_sep = [r for r in fixed_rows if r is not None]
     if non_sep:
-        hdr_row = (
-            fixed[header_idx]
-            if header_idx < len(fixed) and fixed[header_idx] is not None
+        header_row = (
+            fixed_rows[header_idx]
+            if header_idx < len(fixed_rows) and fixed_rows[header_idx] is not None
             else non_sep[0]
         )
-        data_rows_only = [r for r in fixed if r is not None and r is not hdr_row]
-        new_header, new_data = _fix_extra_empty_columns(hdr_row, data_rows_only)
-        new_rows: List[Optional[List[str]]] = []
-        data_iter = iter(new_data)
-        for row in fixed:
+        data_rows              = [r for r in fixed_rows if r is not None and r is not header_row]
+        new_header, new_data   = _fix_extra_empty_columns(header_row, data_rows)
+        new_rows               = []
+        data_iter              = iter(new_data)
+        for row in fixed_rows:
             if row is None:
                 new_rows.append(None)
-            elif row is hdr_row:
+            elif row is header_row:
                 new_rows.append(new_header)
             else:
                 try:
                     new_rows.append(next(data_iter))
                 except StopIteration:
                     pass
-        fixed = new_rows
+        fixed_rows = new_rows
 
     if extracted_caption:
         lifted.insert(0, extracted_caption)
 
-    return _render_md_table(fixed), lifted
+    return _render_md_table(fixed_rows), lifted
 
 
-# --------------------------------------------------------------------------- #
-# Full-document processor
-# --------------------------------------------------------------------------- #
+# ---- full-document scanner -------------------------------------------------
+_TABLE_BLOCK_RE = re.compile(r"((?:^\|[^\n]+\n)+)", re.MULTILINE)
 
-def postprocess_markdown(markdown: str, verbose: bool = False) -> str:
-    """Apply all PP rules to every table in *markdown*.
+
+def postprocess_markdown(markdown: str) -> str:
+    """Apply all PP rules to every markdown table in the document.
     Non-table content is preserved unchanged."""
-    table_count = [0]
 
     def replace_table(m: re.Match) -> str:
-        table_count[0] += 1
-        block = m.group(0)
-        if verbose:
-            print(f"\n[TABLE {table_count[0]}]")
-        processed, lifted = _postprocess_table_block(block, verbose=verbose)
-        prefix = ""
+        block     = m.group(0)
+        processed, lifted = _postprocess_table_block(block)
+        prefix    = ""
         if lifted:
             prefix = "\n".join(f"#### {h}" for h in lifted) + "\n\n"
         return prefix + processed + "\n"
 
-    result = _TABLE_BLOCK_RE.sub(replace_table, markdown)
-    if verbose:
-        print(f"\n[POST-PROC] Processed {table_count[0]} table(s).")
-    return result
+    return _TABLE_BLOCK_RE.sub(replace_table, markdown)
 
 
 # --------------------------------------------------------------------------- #
-# Manifest patch  (optional — keeps verification bundle consistent)
+# CLI
 # --------------------------------------------------------------------------- #
-
-def _patch_manifest(output_md_path: str, new_md_text: str) -> None:
-    """If a manifest.json exists in verification/, update the markdown hash."""
-    output_dir   = os.path.dirname(os.path.abspath(output_md_path))
-    manifest_path = os.path.join(output_dir, "verification", "manifest.json")
-    if not os.path.isfile(manifest_path):
-        # Try one level up (in case output_md is already inside verification/)
-        manifest_path = os.path.join(output_dir, "..", "verification", "manifest.json")
-        manifest_path = os.path.normpath(manifest_path)
-    if not os.path.isfile(manifest_path):
-        return
-    try:
-        with open(manifest_path, "r", encoding="utf-8") as f:
-            manifest = json.load(f)
-        md_artifact = manifest.get("artifacts", {}).get("markdown", {})
-        if md_artifact:
-            md_artifact["sha256"] = sha256_text(new_md_text)
-            md_artifact["note"]   = (
-                md_artifact.get("note", "") + "  [re-processed by postprocess.py]"
-            ).strip()
-        # Record that postprocess.py was run
-        manifest.setdefault("postprocessing", {})["reprocessed_by"] = "postprocess.py"
-        with open(manifest_path, "w", encoding="utf-8") as f:
-            json.dump(manifest, f, ensure_ascii=False, indent=2)
-        print(f"[MANIFEST] Updated sha256 in {manifest_path}")
-    except Exception as e:
-        print(f"[MANIFEST] Could not update manifest: {e}")
-
-
-# --------------------------------------------------------------------------- #
-# CLI entry point
-# --------------------------------------------------------------------------- #
-
-def main() -> None:
+def main():
     ap = argparse.ArgumentParser(
-        description="Standalone markdown table post-processor (PP-01 … PP-13).",
+        description="Standalone markdown table post-processor (PP-01 to PP-13).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
+        epilog="""
+Examples:
+  # Write corrected file next to the original as hsbc_pp.md
+  python postprocess.py --input hsbc.md
+
+  # Specify an explicit output path
+  python postprocess.py --input hsbc.md --output ./hsbc_output/hsbc.md
+
+  # Overwrite in-place (creates hsbc.md.bak backup first)
+  python postprocess.py --input ./hsbc_output/hsbc.md --in-place
+""",
     )
-    ap.add_argument("--input",  required=True, help="Source Markdown file path.")
-    ap.add_argument("--output", default=None,
-                    help="Destination Markdown file.  Default: <stem>_pp.md.")
-    ap.add_argument("--inplace", action="store_true",
-                    help="Overwrite the input file.")
-    ap.add_argument("--backup",  action="store_true",
-                    help="With --inplace: save a backup as <stem>_backup.md first.")
-    ap.add_argument("--no-manifest", action="store_true",
-                    help="Skip manifest.json update.")
-    ap.add_argument("--verbose", "-v", action="store_true",
-                    help="Print per-table processing details.")
+    ap.add_argument(
+        "--input", "-i", required=True,
+        help="Path to the input markdown file.",
+    )
+    ap.add_argument(
+        "--output", "-o", default=None,
+        help=(
+            "Path for the corrected output file.  "
+            "Defaults to <stem>_pp.md in the same directory as --input."
+        ),
+    )
+    ap.add_argument(
+        "--in-place", action="store_true",
+        help=(
+            "Overwrite the input file in-place.  "
+            "A .bak backup is written first.  "
+            "Ignored when --output is also supplied."
+        ),
+    )
     args = ap.parse_args()
 
-    # Resolve paths
-    input_path = os.path.abspath(args.input)
+    input_path = args.input
     if not os.path.isfile(input_path):
-        ap.error(f"Input file not found: {input_path}")
+        raise FileNotFoundError(f"Input file not found: {input_path!r}")
 
-    stem = os.path.splitext(input_path)[0]
-
-    if args.inplace:
+    # Resolve output path
+    if args.output:
+        output_path = args.output
+    elif args.in_place:
         output_path = input_path
-        if args.backup:
-            backup_path = stem + "_backup.md"
-            import shutil
-            shutil.copy2(input_path, backup_path)
-            print(f"[BACKUP] {backup_path}")
     else:
-        output_path = (
-            os.path.abspath(args.output)
-            if args.output
-            else stem + "_pp.md"
-        )
+        stem        = os.path.splitext(input_path)[0]
+        output_path = stem + "_pp.md"
 
     # Read
-    print(f"[IN]  {input_path}")
-    markdown = read_text(input_path)
+    print(f"[POST-PROC] Reading   : {input_path}")
+    markdown_text = read_text(input_path)
+
+    # Backup when overwriting in-place
+    if args.in_place and not args.output:
+        bak_path = input_path + ".bak"
+        shutil.copy2(input_path, bak_path)
+        print(f"[POST-PROC] Backup    : {bak_path}")
 
     # Process
     print("[POST-PROC] Applying rule-based table corrections…")
-    processed = postprocess_markdown(markdown, verbose=args.verbose)
+    corrected = postprocess_markdown(markdown_text)
     print("[POST-PROC] Done.")
 
     # Write
-    write_text(output_path, processed)
-    print(f"[OUT] {output_path}")
+    write_text(output_path, corrected)
+    print(f"[POST-PROC] Written   : {output_path}")
 
-    # Stats
-    original_tables  = len(_TABLE_BLOCK_RE.findall(markdown))
-    processed_tables = len(_TABLE_BLOCK_RE.findall(processed))
-    print(f"[STATS] Tables in input: {original_tables}  |  Tables in output: {processed_tables}")
-    print(f"[STATS] Characters: {len(markdown)} -> {len(processed)}"
-          f"  (diff {len(processed) - len(markdown):+d})")
-
-    # Manifest
-    if not args.no_manifest:
-        _patch_manifest(output_path, processed)
-
-    print("\nDone.  Next:  python verifier.py --bundle "
-          "<output_dir>/verification/manifest.json")
+    # Quick stats
+    orig_pipe = len(re.findall(r"(?m)^\|", markdown_text))
+    corr_pipe = len(re.findall(r"(?m)^\|", corrected))
+    print(f"[POST-PROC] Table lines (pipe): {orig_pipe} → {corr_pipe}")
 
 
 if __name__ == "__main__":
