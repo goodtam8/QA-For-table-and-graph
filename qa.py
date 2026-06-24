@@ -1,16 +1,7 @@
-#!/usr/bin/env python3
-"""
-qa.py — QA system for PDF-to-Markdown converted documents.
-Now reads VERIFIER annotations in the annotated .md file and uses the
-four-level verdict (CORRECT | PARTIAL_CORRECT | PARTIAL_INCORRECT | INCORRECT)
-to qualify answers and warn the user when relevant tables have errors.
-"""
-
 import os
 import json
 import re
 from pathlib import Path
-from typing import Optional
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 
@@ -23,205 +14,22 @@ client = AzureOpenAI(
 )
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-BASE             = Path(__file__).parent
-OUTPUT_DIR       = BASE / "hsbc_output"
-# Prefer the annotated version (with VERIFIER tags); fall back to raw markdown
-ANNOTATED_MD     = OUTPUT_DIR / "annotated_hsbc.md"
-CONTEXT_PATH     = OUTPUT_DIR / "hsbc.md"
-REPORT_PATH      = OUTPUT_DIR / "verification" / "verification_report.json"
-PAGE_IMAGES_DIR  = OUTPUT_DIR / "verification" / "page_images"
-PDF_TEXT_PATH    = OUTPUT_DIR / "verification" / "pdf_text_by_page.json"
+BASE            = Path(__file__).parent
+OUTPUT_DIR      = BASE / "hsbc_output"
+CONTEXT_PATH    = OUTPUT_DIR / "hsbc.md"
+REPORT_PATH     = OUTPUT_DIR / "verification" / "verification_report.json"
+PAGE_IMAGES_DIR = OUTPUT_DIR / "verification" / "page_images"
+PDF_TEXT_PATH   = OUTPUT_DIR / "verification" / "pdf_text_by_page.json"
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# VERIFIER ANNOTATION PARSER
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── Loaders ────────────────────────────────────────────────────────────────────
 
-# Matches: <!-- VERIFIER: status=PARTIAL_CORRECT | confidence=0.83 | correct_ratio=0.85 | errors=WRONG_VALUE -->
-_VERIFIER_TAG_RE = re.compile(
-    r"""<!-- VERIFIER:\s*
-        status=(?P<status>[A-Z_]+)\s*\|\s*
-        confidence=(?P<confidence>[\d\.]+)\s*\|\s*
-        correct_ratio=(?P<correct_ratio>[\d\.]+)\s*\|\s*
-        errors=(?P<errors>[^\-]*?)
-        \s*-->""",
-    re.VERBOSE,
-)
-# Matches: <!-- /VERIFIER -->
-_VERIFIER_CLOSE_RE = re.compile(r"<!--\s*/VERIFIER\s*-->")
-# Matches: <!-- PARTIAL_DETAIL: correct_rows=4 incorrect_rows=2 ratio=0.67 | note -->
-_PARTIAL_DETAIL_RE = re.compile(
-    r"<!-- PARTIAL_DETAIL:\s*"
-    r"correct_rows=(?P<correct_rows>\d+)\s+"
-    r"incorrect_rows=(?P<incorrect_rows>\d+)\s+"
-    r"ratio=(?P<ratio>[\d\.]+)"
-    r"(?:\s*\|\s*(?P<note>[^-]*?))?\s*-->",
-)
-# Matches: <!-- PDF_REF: page=3 | section="..." | pdf_table_index=2 -->
-_PDF_REF_RE = re.compile(
-    r"<!-- PDF_REF:\s*page=(?P<page>[\w]+)\s*\|\s*"
-    r'section="(?P<section>[^"]*)"\s*\|\s*'
-    r"pdf_table_index=(?P<pdf_table_index>[\w]+)\s*-->",
-)
-
-# Verdict ordering (1=best, 4=worst)
-_VERDICT_RANK = {
-    "CORRECT": 1,
-    "PARTIAL_CORRECT": 2,
-    "PARTIAL_INCORRECT": 3,
-    "INCORRECT": 4,
-}
-
-_VERDICT_ICON = {
-    "CORRECT": "✓",
-    "PARTIAL_CORRECT": "◑",
-    "PARTIAL_INCORRECT": "◐",
-    "INCORRECT": "✗",
-}
+def load_context() -> str:
+    return CONTEXT_PATH.read_text(encoding="utf-8")
 
 
-def parse_annotated_blocks(md_text: str) -> list[dict]:
-    """
-    Extract all VERIFIER-annotated blocks from the markdown file.
-    Returns a list of dicts with keys:
-        status, confidence, correct_ratio, errors (list[str]),
-        partial_detail (dict|None), pdf_ref (dict|None),
-        content (the raw table text between open and close tags)
-    """
-    blocks = []
-    pos = 0
-    while True:
-        m_open = _VERIFIER_TAG_RE.search(md_text, pos)
-        if not m_open:
-            break
-        m_close = _VERIFIER_CLOSE_RE.search(md_text, m_open.end())
-        if not m_close:
-            break
-
-        # Everything between the VERIFIER open and /VERIFIER close
-        content = md_text[m_open.end():m_close.start()]
-
-        # Optional PARTIAL_DETAIL after /VERIFIER
-        pd_match = _PARTIAL_DETAIL_RE.search(md_text, m_close.end(), m_close.end() + 400)
-        partial_detail = None
-        if pd_match:
-            partial_detail = {
-                "correct_rows": int(pd_match.group("correct_rows")),
-                "incorrect_rows": int(pd_match.group("incorrect_rows")),
-                "ratio": float(pd_match.group("ratio")),
-                "note": (pd_match.group("note") or "").strip(),
-            }
-
-        # Optional PDF_REF after the close tag
-        pdf_ref_match = _PDF_REF_RE.search(md_text, m_close.end(), m_close.end() + 500)
-        pdf_ref = None
-        if pdf_ref_match:
-            pdf_ref = {
-                "page": pdf_ref_match.group("page"),
-                "section": pdf_ref_match.group("section"),
-                "pdf_table_index": pdf_ref_match.group("pdf_table_index"),
-            }
-
-        errors_str = m_open.group("errors").strip()
-        blocks.append({
-            "status": m_open.group("status"),
-            "confidence": float(m_open.group("confidence")),
-            "correct_ratio": float(m_open.group("correct_ratio")),
-            "errors": [e.strip() for e in errors_str.split(",") if e.strip()],
-            "partial_detail": partial_detail,
-            "pdf_ref": pdf_ref,
-            "content": content.strip(),
-        })
-        pos = m_close.end()
-
-    return blocks
-
-
-def strip_verifier_tags(md_text: str) -> str:
-    """Return clean markdown text with all VERIFIER comment tags removed."""
-    text = _VERIFIER_TAG_RE.sub("", md_text)
-    text = _VERIFIER_CLOSE_RE.sub("", text)
-    text = _PARTIAL_DETAIL_RE.sub("", text)
-    text = _PDF_REF_RE.sub("", text)
-    return text
-
-
-def build_data_quality_note(blocks: list[dict], relevant_pages: list[int]) -> str:
-    """
-    Build a concise data-quality disclaimer for the QA system prompt,
-    focused on tables that may be on the pages relevant to the question.
-    """
-    if not blocks:
-        return ""
-
-    # Filter to blocks whose page overlaps with relevant pages (best effort)
-    def _page(b) -> Optional[int]:
-        pr = b.get("pdf_ref")
-        if pr and pr.get("page", "unknown") != "unknown":
-            try:
-                return int(pr["page"])
-            except ValueError:
-                pass
-        return None
-
-    relevant_blocks = blocks
-    if relevant_pages:
-        on_page = [b for b in blocks if _page(b) in relevant_pages]
-        if on_page:
-            relevant_blocks = on_page
-
-    worst_verdict = max(
-        relevant_blocks, key=lambda b: _VERDICT_RANK.get(b["status"], 0)
-    )
-
-    # Only mention data quality when there are issues
-    if worst_verdict["status"] == "CORRECT":
-        return ""
-
-    lines = ["=== DATA QUALITY NOTICE ==="]
-    summary_counts = {}
-    for b in relevant_blocks:
-        summary_counts[b["status"]] = summary_counts.get(b["status"], 0) + 1
-
-    for verdict in ("PARTIAL_CORRECT", "PARTIAL_INCORRECT", "INCORRECT"):
-        if summary_counts.get(verdict, 0) > 0:
-            icon = _VERDICT_ICON[verdict]
-            lines.append(
-                f"{icon} {summary_counts[verdict]} table(s) labelled {verdict} "
-                f"on the pages relevant to this question."
-            )
-
-    lines.append("")
-    lines.append(
-        "For each PARTIAL_CORRECT or PARTIAL_INCORRECT table: some cell values "
-        "may be inaccurate due to PDF-to-Markdown conversion errors. "
-        "Cite your answers with caution and flag any figures from these tables. "
-        "For INCORRECT tables: do not rely on the data — cross-check against the original PDF."
-    )
-    lines.append("=== END DATA QUALITY NOTICE ===")
-    return "\n".join(lines)
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LOADERS
-# ═══════════════════════════════════════════════════════════════════════════════
-
-def load_context() -> tuple[str, list[dict]]:
-    """
-    Load the best available markdown source.
-    Returns (clean_text, annotated_blocks).
-    """
-    if ANNOTATED_MD.exists():
-        raw = ANNOTATED_MD.read_text(encoding="utf-8")
-        blocks = parse_annotated_blocks(raw)
-        clean  = strip_verifier_tags(raw)
-        return clean, blocks
-
-    # Fallback: use raw markdown, no annotation blocks
-    return CONTEXT_PATH.read_text(encoding="utf-8"), []
-
-
-def load_verification_report() -> Optional[dict]:
+def load_verification_report() -> dict | None:
+    """Return the parsed verification_report.json, or None if not present."""
     if REPORT_PATH.exists():
         with open(REPORT_PATH, encoding="utf-8") as f:
             return json.load(f)
@@ -229,6 +37,11 @@ def load_verification_report() -> Optional[dict]:
 
 
 def load_pdf_text_by_page() -> list[str]:
+    """
+    Load verification/pdf_text_by_page.json and return the list of per-page
+    text strings (1-based: index 0 == page 1).
+    Returns an empty list if the file is missing.
+    """
     if not PDF_TEXT_PATH.exists():
         return []
     with open(PDF_TEXT_PATH, encoding="utf-8") as f:
@@ -236,41 +49,55 @@ def load_pdf_text_by_page() -> list[str]:
     return data.get("pages", [])
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# HALLUCINATION / FLAGGED PAGE DETECTION
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── Hallucination / inaccuracy detection ───────────────────────────────────────
 
-def get_flagged_pages(report: Optional[dict]) -> set[int]:
-    if not report:
-        return set()
+def get_flagged_pages(report: dict) -> set[int]:
     flagged: set[int] = set()
+
+    # Flag pages explicitly listed in inaccurate_sections
     for section in report.get("inaccurate_sections", []):
         page = section.get("page")
         if page is not None:
             flagged.add(int(page))
+
+    # Flag pages explicitly listed in findings
     for finding in report.get("findings", []):
         page = finding.get("page")
         if page is not None:
             flagged.add(int(page))
+
+    # Flag pages with critically low text recall
     for i, r in enumerate(report.get("per_page_text_recall", []), start=1):
         if isinstance(r, (int, float)) and r < 0.35:
             flagged.add(i)
+
+    # ❌ REMOVE the MANUAL_REVIEW block entirely, or demote it to a warning:
+    # if report.get("route") == "MANUAL_REVIEW":
+    #     ...  ← this was flagging all pages including clean ones
+
     return flagged
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LLM-BASED PAGE LOCALIZATION
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── LLM-based page localization ────────────────────────────────────────────────
 
 def locate_relevant_pages(question: str, pdf_pages: list[str]) -> list[int]:
     """
-    Ask the LLM which PDF page(s) directly contain the data for the question.
+    Use the per-page PDF text (from pdf_text_by_page.json) to ask the LLM
+    which page(s) contain the information needed to answer the question.
+
+    This approach is reliable because pdf_text_by_page.json is extracted
+    directly from the PDF (not from the Marker-rendered markdown), so it
+    is not affected by rendering bugs or marker-injection failures.
+
     Returns a sorted list of 1-based page numbers.
+    If the LLM cannot identify specific pages it returns [].
     """
     if not pdf_pages:
         return []
 
     total_pages = len(pdf_pages)
+
+    # Build a compact per-page digest (first 800 chars per page is enough
+    # for topic identification without blowing up the context window).
     page_dump = "\n\n".join(
         f"[Page {i}]\n{text[:800].strip()}"
         for i, text in enumerate(pdf_pages, start=1)
@@ -291,259 +118,312 @@ def locate_relevant_pages(question: str, pdf_pages: list[str]) -> list[int]:
                     "the specific data needed to answer the question. "
                     "Only include a page if that page itself contains the answer, "
                     "not pages that merely mention the same topic in passing. "
-                    "If the answer spans multiple pages, list all of them. "
-                    "Return ONLY a JSON array of integers, e.g. [3] or [5,6]. "
-                    "If you cannot identify specific pages, return []."
+                    "If the answer is on one page, return only that page. "
+                    "Prefer fewer pages over more; only include additional pages "
+                    "if the answer genuinely spans multiple pages. "
+                    "Reply with ONLY a JSON array of integers, e.g. [3] or [3,4]. "
+                    "If you cannot determine the page(s), reply with []. "
+                    "Do NOT include any explanation."
                 ),
             },
             {
                 "role": "user",
                 "content": (
                     f"Question: {question}\n\n"
-                    f"Page excerpts:\n{page_dump[:12000]}"
+                    f"Per-page PDF text:\n{page_dump}"
                 ),
             },
         ],
-        temperature=0.0,
-        max_tokens=80,
+        temperature=0,
+        max_tokens=32,
     )
 
-    raw = (response.choices[0].message.content or "").strip()
-    m = re.search(r"\[([^\]]+)\]", raw)
-    if not m:
+    raw = response.choices[0].message.content.strip()
+    match = re.search(r"\[([\d,\s]*)\]", raw)
+    if not match:
         return []
     try:
-        return sorted({int(x.strip()) for x in m.group(1).split(",") if x.strip().isdigit()})
-    except Exception:
+        nums = [int(x) for x in match.group(1).split(",") if x.strip()]
+        return sorted(set(p for p in nums if 1 <= p <= total_pages))
+    except ValueError:
         return []
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CONTEXT BUILDER — incorporates partial-label quality notes
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── classify question ──────────────────────────────────────────────────────────
 
-def build_system_prompt(
-    context: str,
-    report: Optional[dict],
-    annotation_blocks: list[dict],
-    relevant_pages: list[int],
+def classify_question(
+    question: str,
     flagged_pages: set[int],
-) -> str:
+    report: dict,
+    pdf_pages: list[str],
+) -> tuple[str, list[int]]:
     """
-    Build the full system prompt for the QA LLM call, incorporating:
-    - The clean markdown context
-    - Data-quality notice derived from VERIFIER annotations
-    - Flagged-page warning (from verification_report.json)
-    - Explicit instructions on how to handle each verdict tier
+    Determine whether the question intersects with flagged pages.
+
+    Strategy (in priority order):
+      1. Extract explicit page numbers from the question text.
+      2. Ask the LLM to locate the relevant pages using pdf_text_by_page.json.
+      3. Fall back to keyword overlap with flagged finding details
+         (scoped — returns only the matching flagged pages, not all of them).
+
+    Returns
+    -------
+    classification : "safe" | "flagged" | "unknown"
+    relevant_pages : list of page numbers the question seems to target
+                     (only the RELEVANT ones, never all flagged pages)
     """
-    # ── Base instruction ──────────────────────────────────────────────────────
-    base = (
-        "You are an expert financial document analyst. "
-        "Answer the user's question using ONLY the information in the provided document excerpt. "
-        "Do not use external knowledge. "
-        "Be concise and accurate. "
-        "When you reference a table value, cite it as: [Table on page X]."
+    if not flagged_pages:
+        return "safe", []
+
+    total_pages = report.get("page_count", {}).get("pdf", 0) or len(pdf_pages) or 21
+
+    # ─── 1. Explicit page references in the question text ─────────────────────
+    page_hint_re = re.compile(
+        r"\b(?:page|p\.?|pg\.?)\s*(\d{1,3})|\b(\d{1,3})\s*(?:st|nd|rd|th)?\s*page\b",
+        re.IGNORECASE,
     )
+    explicit_pages = [
+        int(m.group(1) or m.group(2)) for m in page_hint_re.finditer(question)
+    ]
+    explicit_pages = list(dict.fromkeys(explicit_pages))  # deduplicate
 
-    # ── Verdict-tier handling instructions ───────────────────────────────────
-    tier_instructions = (
-        "\n\n=== HOW TO HANDLE TABLE DATA QUALITY TIERS ===\n"
-        "The document tables have been verified by an automated system with four quality tiers:\n"
-        "  CORRECT (✓)           — fully reliable; cite values without caveat.\n"
-        "  PARTIAL_CORRECT (◑)   — mostly reliable but some values may be wrong.\n"
-        "                          Cite figures but add: '(may contain minor conversion errors)'.\n"
-        "  PARTIAL_INCORRECT (◐) — moderate errors; use with caution.\n"
-        "                          Add: '(data accuracy uncertain — verify against original PDF)'.\n"
-        "  INCORRECT (✗)         — significantly wrong; do NOT quote specific values.\n"
-        "                          State instead: 'This table has conversion errors; "
-        "please refer to the original PDF for accurate figures.'\n"
-        "=== END TIER INSTRUCTIONS ===\n"
-    )
+    if explicit_pages:
+        flagged_hit = [p for p in explicit_pages if p in flagged_pages]
+        if flagged_hit:
+            return "flagged", flagged_hit
+        return "safe", explicit_pages
 
-    # ── Data quality notice (from annotations) ───────────────────────────────
-    quality_note = build_data_quality_note(annotation_blocks, relevant_pages)
+    # ─── 2. LLM-based page localization via pdf_text_by_page.json ─────────────
+    llm_pages = locate_relevant_pages(question, pdf_pages)
 
-    # ── Flagged-page warning ──────────────────────────────────────────────────
-    page_warning = ""
-    if flagged_pages and relevant_pages:
-        overlap = set(relevant_pages) & flagged_pages
-        if overlap:
-            page_warning = (
-                f"\n\nWARNING: Page(s) {sorted(overlap)} were flagged as having "
-                f"significant rendering issues in the conversion report. "
-                "Treat all data from these pages with extra caution."
-            )
+    if llm_pages:
+        flagged_hit = [p for p in llm_pages if p in flagged_pages]
+        safe_hit    = [p for p in llm_pages if p not in flagged_pages]
 
-    # ── Assemble ──────────────────────────────────────────────────────────────
-    prompt = base + tier_instructions
-    if quality_note:
-        prompt += "\n\n" + quality_note
-    if page_warning:
-        prompt += page_warning
-    prompt += (
-        "\n\nDocument excerpt:\n"
-        "---\n"
-        + context[:14000]
-        + "\n---"
-    )
-    return prompt
+        if flagged_hit and not safe_hit:
+            # All relevant pages are flagged → refuse and show images.
+            # Surface only the flagged pages that are truly relevant
+            # (the LLM already narrowed these down, so trust the result).
+            return "flagged", flagged_hit
+
+        if flagged_hit and safe_hit:
+            # Mixed: some flagged, some safe → partial answer + images for flagged
+            return "unknown", flagged_hit
+
+        # No relevant page is flagged → safe to answer
+        return "safe", llm_pages
+
+    # ─── 3. Keyword-overlap fallback (scoped to flagged pages only) ───────────
+    # Does NOT return all flagged pages — only the ones whose finding
+    # detail text overlaps with the question words.
+    flagged_details = " ".join(
+        s.get("detail", "") for s in report.get("inaccurate_sections", [])
+    ).lower()
+    q_words = set(re.findall(r"[a-z]{3,}", question.lower()))
+    overlap = q_words & set(re.findall(r"[a-z]{3,}", flagged_details))
+
+    if len(overlap) >= 2:
+        targeted: list[int] = []
+        for section in report.get("inaccurate_sections", []):
+            page = section.get("page")
+            if page is None:
+                continue
+            detail_words = set(re.findall(r"[a-z]{3,}", section.get("detail", "").lower()))
+            if detail_words & overlap:
+                targeted.append(int(page))
+        targeted = sorted(set(targeted))
+        if targeted:
+            return "unknown", targeted
+
+    return "unknown", []
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# MAIN QA FUNCTION
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── Page-image lookup ──────────────────────────────────────────────────────────
 
-def answer_question(question: str) -> str:
+def find_page_images(pages: list[int]) -> list[Path]:
     """
-    Full pipeline:
-    1. Load annotated markdown (or raw fallback)
-    2. Load verification report + PDF page text
-    3. Locate relevant pages via LLM
-    4. Determine flagged pages + annotation-block quality
-    5. Build system prompt with tier-aware quality notes
-    6. Call the LLM to answer
-    7. Append a structured data-quality footer to the answer
+    Return Path objects for every page image matching the given page numbers.
+    Supports common naming conventions produced by tableimg.py.
     """
-    # Step 1: Load context
-    context, annotation_blocks = load_context()
+    if not PAGE_IMAGES_DIR.exists():
+        return []
 
-    # Step 2: Load supporting data
-    report      = load_verification_report()
-    pdf_pages   = load_pdf_text_by_page()
+    images: list[Path] = []
+    for page in pages:
+        candidates = [
+            PAGE_IMAGES_DIR / f"page_{page}.png",
+            PAGE_IMAGES_DIR / f"page_{page}.jpg",
+            PAGE_IMAGES_DIR / f"page{page}.png",
+            PAGE_IMAGES_DIR / f"page{page}.jpg",
+            PAGE_IMAGES_DIR / f"page_{page:03d}.png",
+            PAGE_IMAGES_DIR / f"page_{page:03d}.jpg",
+        ]
+        for c in candidates:
+            if c.exists():
+                images.append(c)
+                break
+        else:
+            globs = list(PAGE_IMAGES_DIR.glob(f"*page*{page}*"))
+            if globs:
+                images.append(sorted(globs)[0])
 
-    # Step 3: Locate relevant pages
-    relevant_pages = locate_relevant_pages(question, pdf_pages)
+    seen: set[Path] = set()
+    unique: list[Path] = []
+    for img in images:
+        if img not in seen:
+            seen.add(img)
+            unique.append(img)
+    return unique
 
-    # Step 4: Flagged pages
-    flagged_pages = get_flagged_pages(report)
 
-    # Step 5: Build system prompt
-    system_prompt = build_system_prompt(
-        context, report, annotation_blocks, relevant_pages, flagged_pages
-    )
+# ── LLM answer ─────────────────────────────────────────────────────────────────
 
-    # Step 6: LLM call
+def answerdirectly(question: str, context: str) -> str:
     response = client.chat.completions.create(
         model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
         messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": question},
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful QA assistant. "
+                    "Answer the user's question using only the provided HSBC Markdown document. "
+                    "If the answer is not in the document, say that you cannot find it in the provided document."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Here is the HSBC Markdown document:\n\n"
+                    f"```markdown\n{context}\n```\n\n"
+                    f"User question:\n{question}"
+                ),
+            },
         ],
-        temperature=0.0,
-        max_tokens=1024,
+        temperature=0,
     )
-    answer = (response.choices[0].message.content or "").strip()
-
-    # Step 7: Append data-quality footer
-    footer = _build_answer_footer(annotation_blocks, relevant_pages, flagged_pages)
-    if footer:
-        answer += "\n\n" + footer
-
-    return answer
+    return response.choices[0].message.content
 
 
-def _build_answer_footer(
-    annotation_blocks: list[dict],
-    relevant_pages: list[int],
-    flagged_pages: set[int],
-) -> str:
+# ── Main entry-point ───────────────────────────────────────────────────────────
+
+def answer(question: str) -> dict:
     """
-    Build a markdown-formatted footer summarising the data-quality status
-    of tables referenced in the answer.
+    Answer a question about the HSBC document with hallucination-awareness.
+
+    Returns a dict:
+        "status"  : "answered" | "flagged" | "partial"
+        "answer"  : str  (LLM answer or refusal message)
+        "images"  : list[str]  (absolute paths to relevant page images)
+        "warning" : str | None
+
+    Status meanings
+    ---------------
+    "answered"  No flagged sections involved; answer is provided as-is.
+    "partial"   Question may touch flagged sections; answer provided with warning.
+    "flagged"   Question clearly targets unreliable content; answer refused and
+                original page image(s) returned for manual calculation.
     """
-    if not annotation_blocks:
-        return ""
+    context   = load_context()
+    report    = load_verification_report()
+    pdf_pages = load_pdf_text_by_page()   # per-page ground-truth text from PDF
 
-    # Filter to relevant pages where possible
-    def _page(b) -> Optional[int]:
-        pr = b.get("pdf_ref")
-        if pr and pr.get("page", "unknown") != "unknown":
-            try:
-                return int(pr["page"])
-            except ValueError:
-                pass
-        return None
+    if report is None:
+        return {
+            "status": "answered",
+            "answer": answerdirectly(question, context),
+            "images": [],
+            "warning": (
+                "⚠️  No verification report found. "
+                "The accuracy of the parsed document could not be verified."
+            ),
+        }
 
-    relevant_blocks = annotation_blocks
-    if relevant_pages:
-        on_page = [b for b in annotation_blocks if _page(b) in relevant_pages]
-        if on_page:
-            relevant_blocks = on_page
+    flagged_pages = get_flagged_pages(report)
+    classification, relevant_pages = classify_question(
+        question, flagged_pages, report, pdf_pages
+    )
 
-    non_correct = [b for b in relevant_blocks if b["status"] != "CORRECT"]
-    if not non_correct:
-        return ""
+    # ── FLAGGED ────────────────────────────────────────────────────────────────
+    if classification == "flagged":
+        images = find_page_images(relevant_pages)
+        flagged_findings = [
+            s for s in report.get("inaccurate_sections", [])
+            if s.get("page") in relevant_pages
+        ]
+        detail_lines = [
+            f"  • Page {s.get('page', '?')}: [{s.get('severity', '-').upper()}] "
+            f"{s.get('detail', '')}"
+            for s in flagged_findings[:10]
+        ]
+        detail_block = "\n".join(detail_lines) if detail_lines else "  (see full report)"
 
-    lines = ["---", "**📊 Table Data Quality Summary**"]
-    for b in non_correct:
-        icon   = _VERDICT_ICON.get(b["status"], "?")
-        pr     = b.get("pdf_ref") or {}
-        page   = pr.get("page", "?")
-        sect   = pr.get("section", "")
-        ratio  = b.get("correct_ratio", 0.0)
-        errors = ", ".join(b["errors"][:4]) if b["errors"] else "none"
-
-        location = f"page {page}" + (f" / {sect}" if sect else "")
-        pd = b.get("partial_detail")
-        pd_detail = ""
-        if pd:
-            pd_detail = (
-                f" — {pd['correct_rows']} rows OK, "
-                f"{pd['incorrect_rows']} rows with issues"
-            )
-
-        lines.append(
-            f"- {icon} **{b['status']}** ({location}): "
-            f"correct_ratio={ratio:.0%}{pd_detail}. "
-            f"Errors: {errors}"
+        warning = (
+            f"⚠️  The conversion of page(s) {sorted(relevant_pages)} was flagged as "
+            f"INACCURATE by the verifier.\n"
+            f"Verification issues:\n{detail_block}\n\n"
+            f"The markdown text for this section is unreliable. "
+            f"Please refer to the original page image(s) below and calculate manually."
         )
 
-    # Add flagged-page note if applicable
-    if flagged_pages and relevant_pages:
-        overlap = set(relevant_pages) & flagged_pages
-        if overlap:
-            lines.append(
-                f"- ⚠️ Page(s) {sorted(overlap)} flagged for rendering issues in conversion report."
-            )
+        return {
+            "status": "flagged",
+            "answer": (
+                "I cannot provide a reliable answer for this question because the "
+                "relevant section(s) of the document were marked as inaccurate during "
+                "verification. Please consult the original page image(s) provided."
+            ),
+            "images": [str(p) for p in images],
+            "warning": warning,
+        }
 
-    return "\n".join(lines)
+    # ── UNKNOWN / PARTIAL ──────────────────────────────────────────────────────
+    if classification == "unknown":
+        images     = find_page_images(relevant_pages)
+        llm_answer = answerdirectly(question, context)
+
+        pages_str = str(sorted(relevant_pages)) if relevant_pages else "(unknown)"
+        warning = (
+            f"⚠️  Some page(s) relevant to this question were flagged as potentially "
+            f"inaccurate ({pages_str}). "
+            f"The answer below is based on the parsed markdown, which may contain "
+            f"errors in those sections. "
+            f"Please cross-check against the original page images if precision is critical."
+        )
+
+        return {
+            "status": "partial",
+            "answer": llm_answer,
+            "images": [str(p) for p in images],
+            "warning": warning,
+        }
+
+    # ── SAFE ───────────────────────────────────────────────────────────────────
+    return {
+        "status": "answered",
+        "answer": answerdirectly(question, context),
+        "images": [],
+        "warning": None,
+    }
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# INTERACTIVE LOOP
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── CLI helper ─────────────────────────────────────────────────────────────────
 
-def interactive_loop() -> None:
-    print("=" * 60)
-    print("QA System for PDF-to-Markdown Documents (v2 — Partial Labels)")
-    if ANNOTATED_MD.exists():
-        print(f"Using annotated markdown: {ANNOTATED_MD}")
-    else:
-        print(f"No annotated markdown found — using raw: {CONTEXT_PATH}")
-    print("Type 'exit' or 'quit' to stop.")
-    print("=" * 60)
-
-    while True:
-        try:
-            question = input("\nQuestion: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nExiting.")
-            break
-        if not question:
-            continue
-        if question.lower() in ("exit", "quit"):
-            print("Goodbye.")
-            break
-
-        print("\nAnswer:")
-        print("-" * 40)
-        try:
-            result = answer_question(question)
-            print(result)
-        except Exception as e:
-            print(f"[error] {e}")
-        print("-" * 40)
+def _print_result(result: dict) -> None:
+    """Pretty-print an answer() result dict to stdout."""
+    print()
+    if result["warning"]:
+        print(result["warning"])
+        print()
+    print("Answer:", result["answer"])
+    if result["images"]:
+        print()
+        print("Relevant page image(s) for manual verification:")
+        for img in result["images"]:
+            print(" ", img)
+    print()
 
 
 if __name__ == "__main__":
-    interactive_loop()
+    question = input("Ask a question about the HSBC document: ")
+    result = answer(question)
+    _print_result(result)
