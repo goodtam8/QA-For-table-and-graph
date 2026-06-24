@@ -1,103 +1,114 @@
 {
   "document_name": "hsbc.pdf",
-  "verifier_version": "1.0",
-  "generated_at": "2026-06-24T07:03:21.468118+00:00",
+  "verifier_version": "2.0",
+  "generated_at": "2026-06-24T12:47:48.301171+00:00",
   "rules": [
     {
       "rule_id": "R01",
       "rule_name": "Cell boundary bleed",
-      "description": "Detects tokens that appear to be halves of a single word split across adjacent cells. Signals: a cell ends mid-word (no trailing space/punctuation expected) and the next cell begins with a lower-case continuation.",
-      "why_it_indicates_an_error": "PDF column boundaries are sometimes inserted inside a continuous text run, causing a single word to land in two adjacent cells.",
+      "description": "Detects tokens split across adjacent cells (half-word in each cell).",
+      "why_it_indicates_an_error": "PDF column boundaries inserted inside a text run split a word into two cells.",
       "confidence_weight": 0.7,
+      "partial_impact": "minor",
       "examples_from_dataset": [
-        "T02",
+        "T09",
         "T03",
-        "T09"
+        "T02"
       ]
     },
     {
       "rule_id": "R02",
       "rule_name": "Row width mismatch",
-      "description": "Counts column separators per row and flags rows whose width differs from the modal column count of the table.",
-      "why_it_indicates_an_error": "Merged or split cells in the PDF extraction stage produce rows with fewer or more columns than the header, indicating column boundary errors.",
+      "description": "Flags rows whose column count differs from the modal count of the table.",
+      "why_it_indicates_an_error": "Merged/split cells produce rows with too few or too many columns.",
       "confidence_weight": 0.53,
+      "partial_impact": "moderate",
       "examples_from_dataset": []
     },
     {
       "rule_id": "R03",
       "rule_name": "Merged cell collapse",
-      "description": "Detects cells containing multiple distinct values concatenated without a separator (e.g., 'Waived Waived' or 'HK$150 HK$125 HK$100').",
-      "why_it_indicates_an_error": "When the PDF extractor fails to maintain column boundaries, values from multiple tier columns collapse into a single cell.",
+      "description": "Detects cells with multiple distinct values concatenated (e.g. 'Waived Waived').",
+      "why_it_indicates_an_error": "Failed column-boundary detection collapses tier values into one cell.",
       "confidence_weight": 0.54,
+      "partial_impact": "structural",
       "examples_from_dataset": []
     },
     {
       "rule_id": "R04",
       "rule_name": "Corrupted symbol",
-      "description": "Detects cells containing noise characters that should be symbols: commas, bullets, tildes, or raw HTML (<b>V</b>) substituting for ✓.",
-      "why_it_indicates_an_error": "OCR and PDF text extractors frequently mis-read graphical tick marks and Unicode symbols, replacing them with nearby ASCII noise.",
+      "description": "Detects noise characters substituting for ✓/✗ (commas, bullets, raw HTML).",
+      "why_it_indicates_an_error": "OCR mis-reads graphical tick marks as nearby ASCII noise.",
       "confidence_weight": 0.55,
+      "partial_impact": "moderate",
       "examples_from_dataset": []
     },
     {
       "rule_id": "R05",
       "rule_name": "Trailing artifact",
-      "description": "Detects cells with trailing underscore, dash, or stray punctuation appended after a valid value (e.g., '✓_', 'V -', 'HK$50 ').",
-      "why_it_indicates_an_error": "PDF extraction can bleed typographic rules, underlines, or table borders into the text content of adjacent cells.",
+      "description": "Detects trailing underscore, dash, or stray punctuation after a valid value.",
+      "why_it_indicates_an_error": "Typographic rules or table borders bleed into adjacent cell text.",
       "confidence_weight": 0.57,
+      "partial_impact": "minor",
       "examples_from_dataset": [
-        "T01",
-        "T04"
+        "T04",
+        "T01"
       ]
     },
     {
       "rule_id": "R06",
-      "rule_name": "Row split (single logical row → multiple rows)",
-      "description": "Detects consecutive rows where the first cell of a row appears to be a continuation of the first cell of the preceding row (e.g., a multi-word label split across two rows).",
-      "why_it_indicates_an_error": "Row-level PDF extraction errors insert spurious line breaks inside merged/wrapped cells, fragmenting one logical row into two.",
+      "rule_name": "Row split",
+      "description": "Two consecutive rows whose first cells appear to be one logical label split in two.",
+      "why_it_indicates_an_error": "Row-level extraction inserts spurious line breaks inside wrapped cells.",
       "confidence_weight": 0.52,
+      "partial_impact": "moderate",
       "examples_from_dataset": []
     },
     {
       "rule_id": "R07",
       "rule_name": "Phantom / OCR noise content",
-      "description": "Flags cells containing garbled or implausible text that bears no resemblance to surrounding content (e.g., 'lakada ada fara', ')A/ : 1').",
-      "why_it_indicates_an_error": "OCR artefacts from non-text PDF regions (logos, rules, watermarks) can inject random character sequences into extracted table cells.",
+      "description": "Flags cells with garbled, implausible text absent from the source (e.g. 'lakada ada').",
+      "why_it_indicates_an_error": "OCR artefacts from non-text PDF regions inject random characters.",
       "confidence_weight": 0.51,
+      "partial_impact": "moderate",
       "examples_from_dataset": []
     },
     {
       "rule_id": "R08",
       "rule_name": "Footnote error",
-      "description": "Detects footnote blocks that are reordered, missing their numeric marker, or truncated mid-sentence relative to expected footnote patterns.",
-      "why_it_indicates_an_error": "PDF-to-Markdown converters often mishandle footnote numbering and ordering, producing unlabelled or incomplete footnote blocks.",
+      "description": "Detects footnote blocks that are reordered, missing their numeric marker, or truncated.",
+      "why_it_indicates_an_error": "Converters often mishandle footnote numbering and ordering.",
       "confidence_weight": 0.47,
+      "partial_impact": "minor",
       "examples_from_dataset": []
     },
     {
       "rule_id": "R09",
       "rule_name": "Missing numeric / currency value",
-      "description": "In a column whose header or majority of cells contain numeric/currency patterns (HK$, RMB, %, digits), flags cells that are unexpectedly empty.",
-      "why_it_indicates_an_error": "Column-shift or extraction failures can leave numeric cells blank while their values land in the wrong column.",
+      "description": "In a numeric-dominant column, flags unexpectedly empty cells.",
+      "why_it_indicates_an_error": "Column-shift or extraction failures leave numeric cells blank.",
       "confidence_weight": 0.46,
+      "partial_impact": "moderate",
       "examples_from_dataset": []
     },
     {
       "rule_id": "R10",
       "rule_name": "Caption absorbed into table",
-      "description": "Detects when the first row of a Markdown table appears to be a prose sentence or section caption rather than a column header or data row.",
-      "why_it_indicates_an_error": "PDF table extractors with imprecise bounding-box detection can absorb the caption or section heading above a table as its first row.",
+      "description": "Detects when the first table row is a prose sentence rather than a column header.",
+      "why_it_indicates_an_error": "Imprecise bounding-box detection absorbs captions as table rows.",
       "confidence_weight": 0.52,
+      "partial_impact": "moderate",
       "examples_from_dataset": [
         "T08"
       ]
     },
     {
       "rule_id": "R11",
-      "rule_name": "Extra columns (column count inflation)",
-      "description": "Flags tables whose column count is higher than expected, suggesting the extractor inserted phantom column boundaries.",
-      "why_it_indicates_an_error": "PDF extraction can mistake whitespace or alignment guides for column separators, generating extra empty columns.",
+      "rule_name": "Extra columns",
+      "description": "Flags tables with more columns than expected (many empty header cells).",
+      "why_it_indicates_an_error": "PDF extraction mistakes whitespace/alignment guides for column separators.",
       "confidence_weight": 0.54,
+      "partial_impact": "structural",
       "examples_from_dataset": [
         "T05"
       ]
@@ -105,10 +116,79 @@
     {
       "rule_id": "R12",
       "rule_name": "Truncated text",
-      "description": "Detects cells or footnote text that end abruptly mid-word or mid-sentence without expected terminal punctuation.",
-      "why_it_indicates_an_error": "Text extraction page-boundary or buffer issues can silently truncate content, producing incomplete sentences.",
+      "description": "Detects cells/footnotes ending abruptly on a common word (preposition, conjunction).",
+      "why_it_indicates_an_error": "Page-boundary or buffer issues silently truncate content.",
       "confidence_weight": 0.47,
+      "partial_impact": "moderate",
       "examples_from_dataset": []
+    },
+    {
+      "rule_id": "R13",
+      "rule_name": "Wrong value",
+      "description": "A cell holds a wrong value: wrong currency amount, wrong word, or inverted flag.",
+      "why_it_indicates_an_error": "OCR digit confusion, column shift, or footnote marker merging produces wrong values.",
+      "confidence_weight": 0.66,
+      "partial_impact": "moderate",
+      "examples_from_dataset": [
+        "T01",
+        "T02",
+        "T05"
+      ]
+    },
+    {
+      "rule_id": "R14",
+      "rule_name": "Missing row",
+      "description": "Entire rows are absent from the markdown table compared to the PDF source.",
+      "why_it_indicates_an_error": "Extractor skips rows when it cannot resolve cell boundaries or page-edge content.",
+      "confidence_weight": 0.55,
+      "partial_impact": "moderate",
+      "examples_from_dataset": [
+        "T02"
+      ]
+    },
+    {
+      "rule_id": "R15",
+      "rule_name": "Wrong annotation / footnote symbol",
+      "description": "An annotation marker (e.g. ±,* → *-*) is corrupted or replaced with wrong character.",
+      "why_it_indicates_an_error": "Superscript and special marker symbols are frequently mis-read by OCR.",
+      "confidence_weight": 0.49,
+      "partial_impact": "minor",
+      "examples_from_dataset": [
+        "T06"
+      ]
+    },
+    {
+      "rule_id": "R16",
+      "rule_name": "Table merge (two tables collapsed into one)",
+      "description": "Two logically separate PDF tables appear merged into a single markdown table.",
+      "why_it_indicates_an_error": "When adjacent tables share a visual boundary the extractor treats them as one.",
+      "confidence_weight": 0.6,
+      "partial_impact": "structural",
+      "examples_from_dataset": [
+        "T05"
+      ]
+    },
+    {
+      "rule_id": "R17",
+      "rule_name": "Missing columns",
+      "description": "Markdown table has fewer columns than the PDF source (tier columns dropped).",
+      "why_it_indicates_an_error": "Column-detection failures cause entire charge-tier columns to vanish.",
+      "confidence_weight": 0.59,
+      "partial_impact": "structural",
+      "examples_from_dataset": [
+        "T06"
+      ]
+    },
+    {
+      "rule_id": "R18",
+      "rule_name": "Section truncated (rows missing from bottom)",
+      "description": "The table ends abruptly; rows present in the PDF are absent from the markdown tail.",
+      "why_it_indicates_an_error": "Page-break handling or extraction buffer limits cut the table short.",
+      "confidence_weight": 0.55,
+      "partial_impact": "structural",
+      "examples_from_dataset": [
+        "T02"
+      ]
     }
   ],
   "tables": [
@@ -124,6 +204,8 @@
       "pdf_match_confidence": 0.375,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -187,7 +269,7 @@
         },
         {
           "rule_id": "R06",
-          "rule_name": "Row split (single logical row → multiple rows)",
+          "rule_name": "Row split",
           "confidence_weight": 0.52,
           "matched_evidence": "Row 15 label='Hong Kong dollar' | Row 16 label='interbank transfer'"
         },
@@ -202,48 +284,60 @@
           "rule_name": "Caption absorbed into table",
           "confidence_weight": 0.52,
           "matched_evidence": " HSBC<br>Internet Banking HSBC<br>Mobile Banking Phonebanking  Self-service<br>banking "
+        },
+        {
+          "rule_id": "R13",
+          "rule_name": "Wrong value",
+          "confidence_weight": 0.66,
+          "matched_evidence": "','"
+        },
+        {
+          "rule_id": "R13",
+          "rule_name": "Wrong value",
+          "confidence_weight": 0.66,
+          "matched_evidence": "','"
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Place Time Deposits",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Place Deposit Plus",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "'✓.'",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "','",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "'•'",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "','",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "'<b>~</b>'",
           "severity": "high"
         },
@@ -267,7 +361,7 @@
         },
         {
           "code": "CELL_ROW_SPLIT",
-          "message": "Two consecutive rows appear to be a single logical row split by the extractor.",
+          "message": "Two consecutive rows appear to be one logical row split by the extractor.",
           "evidence": "Row 15 label='Hong Kong dollar' | Row 16 label='interbank transfer'",
           "severity": "high"
         },
@@ -279,9 +373,21 @@
         },
         {
           "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
+          "message": "Header row appears to be a prose caption rather than column labels.",
           "evidence": " HSBC<br>Internet Banking HSBC<br>Mobile Banking Phonebanking  Self-service<br>banking ",
           "severity": "medium"
+        },
+        {
+          "code": "WRONG_VALUE",
+          "message": "Cell contains lone comma where a monetary/tick value is expected.",
+          "evidence": "','",
+          "severity": "high"
+        },
+        {
+          "code": "WRONG_VALUE",
+          "message": "Cell contains lone comma where a monetary/tick value is expected.",
+          "evidence": "','",
+          "severity": "high"
         }
       ],
       "table_excerpt": "|  | HSBC<br>Internet Banking | HSBC<br>Mobile Banking | Phonebanking |",
@@ -300,6 +406,8 @@
       "pdf_match_confidence": 0.541,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -401,7 +509,7 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment services – remittances Inward payments  Telegraphic transfer Payment of demand draft drawn on HSBC in Hong Kong ",
           "severity": "high"
         },
@@ -497,7 +605,7 @@
         }
       ],
       "table_excerpt": "| em |  | Page |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -512,6 +620,8 @@
       "pdf_match_confidence": 0.684,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -865,37 +975,37 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Interbank funds transfers Payment through Real Time Gross Settlement (RTGS)",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment through Faster Payment System (FPS)",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "PayMe from HSBC<br>Credit Card/ Bank Account Top-Up",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Bank Account Fund Out",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Annualised Percentage Rate (APR)",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "'<b>G</b> .'",
           "severity": "high"
         },
@@ -1213,7 +1323,7 @@
         }
       ],
       "table_excerpt": "| I4~ |  |  | Done |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -1226,8 +1336,15 @@
       "section": "H. Special privileges for HSBC Jade",
       "pdf_table_index": 6,
       "pdf_match_confidence": 0.526,
-      "verdict": "INCORRECT",
+      "verdict": "PARTIAL_CORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.85,
+      "partial_detail": {
+        "correct_rows": [],
+        "incorrect_rows": [],
+        "correct_ratio": 0.85,
+        "note": "Estimated by heuristic rule engine (no ground-truth row labels available here)"
+      },
       "triggered_rules": [
         {
           "rule_id": "R05",
@@ -1344,6 +1461,8 @@
       "pdf_match_confidence": 0.594,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -1523,31 +1642,31 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Mastercard Debit Card Annual fee Overseas ATM cash withdrawal Local ATM cash withdrawal Foreign currency transaction fee",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Mortgage services Change of Mortgage Plan Change of repayment plan Change of Mortgagor/Guarantor/Mortgage Deed Request f",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Transaction fee for ATMs Cash withdrawal made through the HSBC Group's ATM network using HSBC Jade Mastercard Debit Card",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "General services - all accounts Cashier's order Coins changing/withdrawal/exchange to notes Coins paid-in Bulk cash depo",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Mortgage services Change of Mortgage Plan Change of repayment plan Request for each extra copy of documents",
           "severity": "high"
         },
@@ -1697,7 +1816,7 @@
         }
       ],
       "table_excerpt": "| Ite | n |  | Page |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -1712,6 +1831,8 @@
       "pdf_match_confidence": 0.504,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -1759,13 +1880,13 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Transaction fee for ATMs<br>Cash withdrawal made through the HSBC Group's ATM network using<br>HSBC Premier ATM Card/Jun",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "General services - all accounts Cashier's order Coins changing/withdrawal/exchange to notes Coins paid-in Bulk cash depo",
           "severity": "high"
         },
@@ -1801,7 +1922,7 @@
         }
       ],
       "table_excerpt": "| lter | n |  | Page |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -1816,6 +1937,8 @@
       "pdf_match_confidence": 0.957,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R01",
@@ -2049,43 +2172,43 @@
       "errors": [
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Waive' | 'ed'",
           "severity": "high"
         },
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Waive' | 'ed'",
           "severity": "high"
         },
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Waive' | 'ed'",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Customer Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HK\\$60 plus HK\\$331 collected Interbank Clearing Limite",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Waived Waived",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "'aived //'",
           "severity": "high"
         },
@@ -2292,6 +2415,8 @@
       "pdf_match_confidence": 1.0,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R01",
@@ -2399,37 +2524,37 @@
       "errors": [
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Waive' | 'ed'",
           "severity": "high"
         },
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Waive' | 'ed'",
           "severity": "high"
         },
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Wai' | 'ved'",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Waived Waived",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "'•'",
           "severity": "high"
         },
@@ -2516,6 +2641,8 @@
       "pdf_match_confidence": 0.959,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -2645,7 +2772,7 @@
         },
         {
           "rule_id": "R11",
-          "rule_name": "Extra columns (column count inflation)",
+          "rule_name": "Extra columns",
           "confidence_weight": 0.54,
           "matched_evidence": "9/10 header cells are empty"
         }
@@ -2653,55 +2780,55 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC Best Lending Rate + 8% per annum plus HK\\$100 handling charge",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For AssetLink/Personal Overdraft/HSBC One/<br>Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For Hong Kong dollar current / Hong Kong Dollar<br>Statement Saving",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For Super Ease account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC USD Best Lending Rate + 6% per annum<br>plus HK\\$120 handling charge",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For Home Owner's Overdraft",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For Revolving Credit Facility",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Customer Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Customer Personal Integrated Account",
           "severity": "high"
         },
@@ -2785,7 +2912,7 @@
         }
       ],
       "table_excerpt": "| A1. General services – all accounts |  |  |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -2800,6 +2927,8 @@
       "pdf_match_confidence": 0.953,
       "verdict": "INCORRECT",
       "confidence": 0.973,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R07",
@@ -2827,7 +2956,7 @@
         },
         {
           "rule_id": "R11",
-          "rule_name": "Extra columns (column count inflation)",
+          "rule_name": "Extra columns",
           "confidence_weight": 0.54,
           "matched_evidence": "5/11 header cells are empty"
         }
@@ -2880,6 +3009,8 @@
       "pdf_match_confidence": 0.955,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -2919,7 +3050,7 @@
         },
         {
           "rule_id": "R11",
-          "rule_name": "Extra columns (column count inflation)",
+          "rule_name": "Extra columns",
           "confidence_weight": 0.54,
           "matched_evidence": "8/9 header cells are empty"
         }
@@ -2927,7 +3058,7 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
@@ -2969,7 +3100,7 @@
         }
       ],
       "table_excerpt": "| C1. Payment services – autoPay services |  |  |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -2984,6 +3115,8 @@
       "pdf_match_confidence": 0.761,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -3038,36 +3171,48 @@
           "rule_name": "Phantom / OCR noise content",
           "confidence_weight": 0.51,
           "matched_evidence": "Each clean bill (demand draft/ clean cheque) returned unpaid for any reason"
+        },
+        {
+          "rule_id": "R13",
+          "rule_name": "Wrong value",
+          "confidence_weight": 0.66,
+          "matched_evidence": "'\\\\'"
+        },
+        {
+          "rule_id": "R13",
+          "rule_name": "Wrong value",
+          "confidence_weight": 0.66,
+          "matched_evidence": "','"
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Customer Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Waived Waived",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Waived Waived",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "'\\\\'",
           "severity": "high"
         },
         {
           "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
+          "message": "Cell contains noise character where ✓/✗ is expected.",
           "evidence": "','",
           "severity": "high"
         },
@@ -3094,10 +3239,22 @@
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "Each clean bill (demand draft/ clean cheque) returned unpaid for any reason",
           "severity": "high"
+        },
+        {
+          "code": "WRONG_VALUE",
+          "message": "Cell contains lone backslash where a monetary/tick value is expected.",
+          "evidence": "'\\\\'",
+          "severity": "high"
+        },
+        {
+          "code": "WRONG_VALUE",
+          "message": "Cell contains lone comma where a monetary/tick value is expected.",
+          "evidence": "','",
+          "severity": "high"
         }
       ],
       "table_excerpt": "| Item | Charge |  |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -3112,6 +3269,8 @@
       "pdf_match_confidence": 0.802,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -3202,18 +3361,24 @@
           "rule_name": "Missing numeric / currency value",
           "confidence_weight": 0.46,
           "matched_evidence": "Row 9, col 3 (header=''): empty"
+        },
+        {
+          "rule_id": "R15",
+          "rule_name": "Wrong annotation / footnote symbol",
+          "confidence_weight": 0.49,
+          "matched_evidence": "Global payments debited from an account with HSBC *- * Each transfer |  |  |  |  | "
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "<ul> <li>Via HSBC Internet Banking/HSBC Mobile Banking</li> <li>Renminbi telegraphic transfer to HSBC Group/branches in ",
           "severity": "high"
         },
@@ -3294,10 +3459,16 @@
           "message": "Empty cell in a column that should contain a numeric/currency value.",
           "evidence": "Row 9, col 3 (header=''): empty",
           "severity": "medium"
+        },
+        {
+          "code": "WRONG_SYMBOL",
+          "message": "Annotation marker is corrupted (asterisk-dash-asterisk pattern detected).",
+          "evidence": "Global payments debited from an account with HSBC *- * Each transfer |  |  |  |  | ",
+          "severity": "low"
         }
       ],
       "table_excerpt": "| Item | Charge |  |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -3312,6 +3483,8 @@
       "pdf_match_confidence": 0.933,
       "verdict": "INCORRECT",
       "confidence": 0.862,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R01",
@@ -3329,13 +3502,13 @@
       "errors": [
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Waived' | 'f'",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         }
@@ -3356,6 +3529,8 @@
       "pdf_match_confidence": 0.968,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R01",
@@ -3553,37 +3728,37 @@
       "errors": [
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Item C' | 'harge'",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment through Real Time Gross Settlement (RTGS) <sup>†*</sup> Each real time outward RTGS payment to the credit of an ",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment through Faster Payment System (FPS)",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Each Hong Kong dollar/Renminbi outward payment to the credit of an a Participants <sup>®</sup>",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Credit Card/ Bank Account Top-Up <sup>#</sup>",
           "severity": "high"
         },
@@ -3760,6 +3935,8 @@
       "pdf_match_confidence": 0.91,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -3867,7 +4044,7 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
@@ -3969,7 +4146,7 @@
         }
       ],
       "table_excerpt": "| Item | Charge |  |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -3983,7 +4160,9 @@
       "pdf_table_index": 4,
       "pdf_match_confidence": 0.456,
       "verdict": "INCORRECT",
-      "confidence": 0.953,
+      "confidence": 0.981,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -4008,36 +4187,48 @@
           "rule_name": "Caption absorbed into table",
           "confidence_weight": 0.52,
           "matched_evidence": "Item Below balance fee <sup>1</sup> (based on average Total Relationship Balance over the last three"
+        },
+        {
+          "rule_id": "R17",
+          "rule_name": "Missing columns",
+          "confidence_weight": 0.59,
+          "matched_evidence": "Table has only 2 columns but Charge/Fee header detected"
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For customer with a Total Relationship Balance of",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For customer with a Total Relationship Balance of",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
+          "message": "Header row appears to be a prose caption rather than column labels.",
           "evidence": "Item Below balance fee <sup>1</sup> (based on average Total Relationship Balance over the last three",
           "severity": "medium"
+        },
+        {
+          "code": "MISSING_COLUMNS",
+          "message": "Table appears to be missing customer-tier columns (only 1-2 columns present).",
+          "evidence": "Table has only 2 columns but Charge/Fee header detected",
+          "severity": "high"
         }
       ],
       "table_excerpt": "| Item | Below balance fee <sup>1</sup> (based on average Total Relationship Balance over the last three months) |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Re-extract the table ensuring all customer-tier columns are preserved.",
       "notes": []
     },
     {
@@ -4051,7 +4242,9 @@
       "pdf_table_index": 2,
       "pdf_match_confidence": 0.82,
       "verdict": "INCORRECT",
-      "confidence": 0.974,
+      "confidence": 0.989,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -4082,24 +4275,30 @@
           "rule_name": "Missing numeric / currency value",
           "confidence_weight": 0.46,
           "matched_evidence": "Row 5, col 2 (header='Charge'): empty"
+        },
+        {
+          "rule_id": "R17",
+          "rule_name": "Missing columns",
+          "confidence_weight": 0.59,
+          "matched_evidence": "Table has only 2 columns but Charge/Fee header detected"
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Early Repayment Fee",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Revolving Credit Facility",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Unauthorized Overdraft Handling Charge",
           "severity": "high"
         },
@@ -4114,10 +4313,16 @@
           "message": "Empty cell in a column that should contain a numeric/currency value.",
           "evidence": "Row 5, col 2 (header='Charge'): empty",
           "severity": "medium"
+        },
+        {
+          "code": "MISSING_COLUMNS",
+          "message": "Table appears to be missing customer-tier columns (only 1-2 columns present).",
+          "evidence": "Table has only 2 columns but Charge/Fee header detected",
+          "severity": "high"
         }
       ],
       "table_excerpt": "| Item | Charge |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Re-extract the table ensuring all customer-tier columns are preserved.",
       "notes": []
     },
     {
@@ -4132,6 +4337,8 @@
       "pdf_match_confidence": 0.544,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -4183,7 +4390,7 @@
         },
         {
           "rule_id": "R11",
-          "rule_name": "Extra columns (column count inflation)",
+          "rule_name": "Extra columns",
           "confidence_weight": 0.54,
           "matched_evidence": "9/10 header cells are empty"
         }
@@ -4191,25 +4398,25 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Late Payment Charge (Minimum Payment)",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Unauthorised Overdraft Interest Rate",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Unauthorised Overdraft Handling Charge",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Overdraft Protection Interest Rate",
           "severity": "high"
         },
@@ -4245,7 +4452,7 @@
         }
       ],
       "table_excerpt": "|  | Charge |  |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -4260,6 +4467,8 @@
       "pdf_match_confidence": 0.597,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R01",
@@ -4479,7 +4688,7 @@
         },
         {
           "rule_id": "R11",
-          "rule_name": "Extra columns (column count inflation)",
+          "rule_name": "Extra columns",
           "confidence_weight": 0.54,
           "matched_evidence": "10/13 header cells are empty"
         },
@@ -4499,49 +4708,49 @@
       "errors": [
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'waived' | 'waived'",
           "severity": "high"
         },
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'waived' | 'waived'",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC Pulse UnionPay Dual Currency",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Annualised Percentage Rate (APR) <sup>2</sup> On purchase",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "and cash advance fees) On Cash Credit Plan",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Early Repayment Fee of Cash Instalment Plan",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Early Repayment Fee of Spending<br>Instalment Plan",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "*The fee relating to foreign currency transactions applicable for HK dollar personal credit cards and USD Visa Gold Card",
           "severity": "high"
         },
@@ -4748,6 +4957,8 @@
       "pdf_match_confidence": 1.0,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -4843,19 +5054,19 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HK\\$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HK\\$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC",
           "severity": "high"
         },
@@ -4933,7 +5144,7 @@
         }
       ],
       "table_excerpt": "| G2. ATM card/Other account cards |  |  |  |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -4948,6 +5159,8 @@
       "pdf_match_confidence": 0.975,
       "verdict": "INCORRECT",
       "confidence": 0.98,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R01",
@@ -4977,19 +5190,19 @@
       "errors": [
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Wa' | 'ved'",
           "severity": "high"
         },
         {
           "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
+          "message": "A word appears split across adjacent cells.",
           "evidence": "'Wai' | 'ved'",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
         },
@@ -5016,6 +5229,8 @@
       "pdf_match_confidence": 0.91,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -5073,13 +5288,13 @@
         },
         {
           "rule_id": "R06",
-          "rule_name": "Row split (single logical row → multiple rows)",
+          "rule_name": "Row split",
           "confidence_weight": 0.52,
           "matched_evidence": "Row 15 label='- All others' | Row 16 label='via HSBC branches (telegraphic transfer)'"
         },
         {
           "rule_id": "R06",
-          "rule_name": "Row split (single logical row → multiple rows)",
+          "rule_name": "Row split",
           "confidence_weight": 0.52,
           "matched_evidence": "Row 23 label='with other local banks' | Row 24 label='via HSBC Internet Banking/HSBC Mobile Banking'"
         },
@@ -5190,72 +5405,78 @@
           "rule_name": "Truncated text",
           "confidence_weight": 0.47,
           "matched_evidence": "enminbi outward payment to the credit of"
+        },
+        {
+          "rule_id": "R17",
+          "rule_name": "Missing columns",
+          "confidence_weight": 0.59,
+          "matched_evidence": "Table has only 2 columns but Charge/Fee header detected"
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "(based on average Total Relationship Balance over the last three months <sup>2</sup> )",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For HSBC Jade client with a Total Relationship Balance of",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Wealth Management Connect",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "- Other Telegraphic Transfer",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment through Real Time Gross Settlement (RTGS) <sup>7,8</sup>",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment through Faster Payment System (FPS)",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Each Hong Kong dollar/Renminbi outward payment to the credit of",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC Best Lending Rate + 8% per annum",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC Best Lending Rate + 4% per annum",
           "severity": "high"
         },
         {
           "code": "CELL_ROW_SPLIT",
-          "message": "Two consecutive rows appear to be a single logical row split by the extractor.",
+          "message": "Two consecutive rows appear to be one logical row split by the extractor.",
           "evidence": "Row 15 label='- All others' | Row 16 label='via HSBC branches (telegraphic transfer)'",
           "severity": "high"
         },
         {
           "code": "CELL_ROW_SPLIT",
-          "message": "Two consecutive rows appear to be a single logical row split by the extractor.",
+          "message": "Two consecutive rows appear to be one logical row split by the extractor.",
           "evidence": "Row 23 label='with other local banks' | Row 24 label='via HSBC Internet Banking/HSBC Mobile Banking'",
           "severity": "high"
         },
@@ -5357,7 +5578,7 @@
         },
         {
           "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
+          "message": "Header row appears to be a prose caption rather than column labels.",
           "evidence": "HSBC Jade brings you full fee waivers or preferential offers for sele ected products and services.",
           "severity": "medium"
         },
@@ -5366,10 +5587,16 @@
           "message": "Cell text ends abruptly on a common word, suggesting truncation.",
           "evidence": "enminbi outward payment to the credit of",
           "severity": "medium"
+        },
+        {
+          "code": "MISSING_COLUMNS",
+          "message": "Table appears to be missing customer-tier columns (only 1-2 columns present).",
+          "evidence": "Table has only 2 columns but Charge/Fee header detected",
+          "severity": "high"
         }
       ],
       "table_excerpt": "| HSBC Jade brings you full fee waivers or preferential offers for sele | ected products and services. |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Re-extract the table ensuring all customer-tier columns are preserved.",
       "notes": []
     },
     {
@@ -5384,6 +5611,8 @@
       "pdf_match_confidence": 0.948,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -5437,13 +5666,13 @@
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Request for each extra copy of documents  Statement/confirmation letter  Repayment schedule/rate change advice/facility ",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Cash withdrawal made through the HSBC Group's ATM network <sup>13</sup> using HSBC Jade Mastercard Debit Card/HSBC Premi",
           "severity": "high"
         },
@@ -5485,7 +5714,7 @@
         }
       ],
       "table_excerpt": "| Items | Special privileges |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -5498,8 +5727,15 @@
       "section": "I. Special privileges for HSBC Premier",
       "pdf_table_index": 1,
       "pdf_match_confidence": 0.829,
-      "verdict": "INCORRECT",
+      "verdict": "PARTIAL_INCORRECT",
       "confidence": 0.76,
+      "estimated_correct_ratio": 0.6,
+      "partial_detail": {
+        "correct_rows": [],
+        "incorrect_rows": [],
+        "correct_ratio": 0.6,
+        "note": "Estimated by heuristic rule engine (no ground-truth row labels available here)"
+      },
       "triggered_rules": [
         {
           "rule_id": "R07",
@@ -5544,6 +5780,8 @@
       "pdf_match_confidence": 0.875,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.25,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -5718,66 +5956,72 @@
           "rule_name": "Truncated text",
           "confidence_weight": 0.47,
           "matched_evidence": "nt to the credit of an account held with"
+        },
+        {
+          "rule_id": "R17",
+          "rule_name": "Missing columns",
+          "confidence_weight": 0.59,
+          "matched_evidence": "Table has only 2 columns but Charge/Fee header detected"
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "(based on average Total Relationship Balance over the last three months <sup>2</sup> )",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "For HSBC Premier customer with a Total Relationship Balance of",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Wealth Management Connect",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "- Other Telegraphic Transfer",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment through Real Time Gross Settlement (RTGS) <sup>7, 8</sup>",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Payment through Faster Payment System (FPS)",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Each Hong Kong dollar/Renminbi outward payment to the credit of an account held with other Participants <sup>9</sup>",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC Premier Mastercard Credit Card",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC Best Lending Rate +8% per annum",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "HSBC Best Lending Rate +4% per",
           "severity": "high"
         },
@@ -5879,7 +6123,7 @@
         },
         {
           "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
+          "message": "Header row appears to be a prose caption rather than column labels.",
           "evidence": "HSBC Premier brings you full fee waivers or preferential offer of up to 50% % off on selected bankin",
           "severity": "medium"
         },
@@ -5894,10 +6138,16 @@
           "message": "Cell text ends abruptly on a common word, suggesting truncation.",
           "evidence": "nt to the credit of an account held with",
           "severity": "medium"
+        },
+        {
+          "code": "MISSING_COLUMNS",
+          "message": "Table appears to be missing customer-tier columns (only 1-2 columns present).",
+          "evidence": "Table has only 2 columns but Charge/Fee header detected",
+          "severity": "high"
         }
       ],
       "table_excerpt": "| HSBC Premier brings you full fee waivers or preferential offer of up to 50% | % off on selected banking services. |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Re-extract the table ensuring all customer-tier columns are preserved.",
       "notes": []
     },
     {
@@ -5912,6 +6162,8 @@
       "pdf_match_confidence": 0.832,
       "verdict": "INCORRECT",
       "confidence": 0.99,
+      "estimated_correct_ratio": 0.3,
+      "partial_detail": null,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -5966,18 +6218,24 @@
           "rule_name": "Caption absorbed into table",
           "confidence_weight": 0.52,
           "matched_evidence": "Change of repayment plan<br>General change, e.g. instalment amount, loan tenure,<br>repayment option"
+        },
+        {
+          "rule_id": "R14",
+          "rule_name": "Missing row",
+          "confidence_weight": 0.55,
+          "matched_evidence": "Last row: ['', '']"
         }
       ],
       "errors": [
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Request for each extra copy of documents  Statement/confirmation letter Repayment schedule/rate change advice/facility l",
           "severity": "high"
         },
         {
           "code": "MERGED_CELL_COLLAPSE",
-          "message": "Multiple distinct values are concatenated inside a single cell.",
+          "message": "Multiple distinct values concatenated in a single cell.",
           "evidence": "Cash withdrawal made through the HSBC Group's ATM network <sup>1:</sup><br>using HSBC Premier ATM Card/Junior Pack Cash ",
           "severity": "high"
         },
@@ -6022,10 +6280,16 @@
           "message": "First body row appears to be a prose caption absorbed into the table.",
           "evidence": "Change of repayment plan<br>General change, e.g. instalment amount, loan tenure,<br>repayment option",
           "severity": "medium"
+        },
+        {
+          "code": "MISSING_ROW",
+          "message": "Last table row is empty/degenerate — rows may be missing from the bottom.",
+          "evidence": "Last row: ['', '']",
+          "severity": "medium"
         }
       ],
       "table_excerpt": "| Items | Special privileges |",
-      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "suggested_fix": "Verify the source PDF column count; split concatenated values into separate cells.",
       "notes": []
     },
     {
@@ -6038,8 +6302,15 @@
       "section": "I. Special privileges for HSBC Premier",
       "pdf_table_index": 1,
       "pdf_match_confidence": 1.0,
-      "verdict": "INCORRECT",
+      "verdict": "PARTIAL_INCORRECT",
       "confidence": 0.76,
+      "estimated_correct_ratio": 0.6,
+      "partial_detail": {
+        "correct_rows": [],
+        "incorrect_rows": [],
+        "correct_ratio": 0.6,
+        "note": "Estimated by heuristic rule engine (no ground-truth row labels available here)"
+      },
       "triggered_rules": [
         {
           "rule_id": "R07",
@@ -6076,7 +6347,9 @@
   "summary": {
     "total_tables": 28,
     "correct_tables": 0,
-    "incorrect_tables": 28,
+    "partial_correct_tables": 1,
+    "partial_incorrect_tables": 2,
+    "incorrect_tables": 25,
     "uncertain_pdf_matches": 0
   }
 }
