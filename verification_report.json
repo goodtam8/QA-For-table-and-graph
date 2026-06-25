@@ -1,20 +1,8 @@
 {
   "document_name": "hsbc.pdf",
-  "verifier_version": "1.0",
-  "generated_at": "2026-06-24T07:03:21.468118+00:00",
+  "verifier_version": "1.1",
+  "generated_at": "2026-06-25T08:23:40.576310+00:00",
   "rules": [
-    {
-      "rule_id": "R01",
-      "rule_name": "Cell boundary bleed",
-      "description": "Detects tokens that appear to be halves of a single word split across adjacent cells. Signals: a cell ends mid-word (no trailing space/punctuation expected) and the next cell begins with a lower-case continuation.",
-      "why_it_indicates_an_error": "PDF column boundaries are sometimes inserted inside a continuous text run, causing a single word to land in two adjacent cells.",
-      "confidence_weight": 0.7,
-      "examples_from_dataset": [
-        "T02",
-        "T03",
-        "T09"
-      ]
-    },
     {
       "rule_id": "R02",
       "rule_name": "Row width mismatch",
@@ -32,46 +20,11 @@
       "examples_from_dataset": []
     },
     {
-      "rule_id": "R04",
-      "rule_name": "Corrupted symbol",
-      "description": "Detects cells containing noise characters that should be symbols: commas, bullets, tildes, or raw HTML (<b>V</b>) substituting for ✓.",
-      "why_it_indicates_an_error": "OCR and PDF text extractors frequently mis-read graphical tick marks and Unicode symbols, replacing them with nearby ASCII noise.",
-      "confidence_weight": 0.55,
-      "examples_from_dataset": []
-    },
-    {
-      "rule_id": "R05",
-      "rule_name": "Trailing artifact",
-      "description": "Detects cells with trailing underscore, dash, or stray punctuation appended after a valid value (e.g., '✓_', 'V -', 'HK$50 ').",
-      "why_it_indicates_an_error": "PDF extraction can bleed typographic rules, underlines, or table borders into the text content of adjacent cells.",
-      "confidence_weight": 0.57,
-      "examples_from_dataset": [
-        "T01",
-        "T04"
-      ]
-    },
-    {
-      "rule_id": "R06",
-      "rule_name": "Row split (single logical row → multiple rows)",
-      "description": "Detects consecutive rows where the first cell of a row appears to be a continuation of the first cell of the preceding row (e.g., a multi-word label split across two rows).",
-      "why_it_indicates_an_error": "Row-level PDF extraction errors insert spurious line breaks inside merged/wrapped cells, fragmenting one logical row into two.",
-      "confidence_weight": 0.52,
-      "examples_from_dataset": []
-    },
-    {
       "rule_id": "R07",
       "rule_name": "Phantom / OCR noise content",
       "description": "Flags cells containing garbled or implausible text that bears no resemblance to surrounding content (e.g., 'lakada ada fara', ')A/ : 1').",
       "why_it_indicates_an_error": "OCR artefacts from non-text PDF regions (logos, rules, watermarks) can inject random character sequences into extracted table cells.",
       "confidence_weight": 0.51,
-      "examples_from_dataset": []
-    },
-    {
-      "rule_id": "R08",
-      "rule_name": "Footnote error",
-      "description": "Detects footnote blocks that are reordered, missing their numeric marker, or truncated mid-sentence relative to expected footnote patterns.",
-      "why_it_indicates_an_error": "PDF-to-Markdown converters often mishandle footnote numbering and ordering, producing unlabelled or incomplete footnote blocks.",
-      "confidence_weight": 0.47,
       "examples_from_dataset": []
     },
     {
@@ -83,16 +36,6 @@
       "examples_from_dataset": []
     },
     {
-      "rule_id": "R10",
-      "rule_name": "Caption absorbed into table",
-      "description": "Detects when the first row of a Markdown table appears to be a prose sentence or section caption rather than a column header or data row.",
-      "why_it_indicates_an_error": "PDF table extractors with imprecise bounding-box detection can absorb the caption or section heading above a table as its first row.",
-      "confidence_weight": 0.52,
-      "examples_from_dataset": [
-        "T08"
-      ]
-    },
-    {
       "rule_id": "R11",
       "rule_name": "Extra columns (column count inflation)",
       "description": "Flags tables whose column count is higher than expected, suggesting the extractor inserted phantom column boundaries.",
@@ -101,14 +44,6 @@
       "examples_from_dataset": [
         "T05"
       ]
-    },
-    {
-      "rule_id": "R12",
-      "rule_name": "Truncated text",
-      "description": "Detects cells or footnote text that end abruptly mid-word or mid-sentence without expected terminal punctuation.",
-      "why_it_indicates_an_error": "Text extraction page-boundary or buffer issues can silently truncate content, producing incomplete sentences.",
-      "confidence_weight": 0.47,
-      "examples_from_dataset": []
     }
   ],
   "tables": [
@@ -123,7 +58,7 @@
       "pdf_table_index": 1,
       "pdf_match_confidence": 0.375,
       "verdict": "INCORRECT",
-      "confidence": 0.99,
+      "confidence": 0.896,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -138,70 +73,10 @@
           "matched_evidence": "Place Deposit Plus"
         },
         {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "'✓.'"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "','"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "'•'"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "','"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "'<b>~</b>'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'✓_'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'✓.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'✓_'"
-        },
-        {
-          "rule_id": "R06",
-          "rule_name": "Row split (single logical row → multiple rows)",
-          "confidence_weight": 0.52,
-          "matched_evidence": "Row 15 label='Hong Kong dollar' | Row 16 label='interbank transfer'"
-        },
-        {
           "rule_id": "R07",
           "rule_name": "Phantom / OCR noise content",
           "confidence_weight": 0.51,
           "matched_evidence": "Check credit card transactions"
-        },
-        {
-          "rule_id": "R10",
-          "rule_name": "Caption absorbed into table",
-          "confidence_weight": 0.52,
-          "matched_evidence": " HSBC<br>Internet Banking HSBC<br>Mobile Banking Phonebanking  Self-service<br>banking "
         }
       ],
       "errors": [
@@ -218,74 +93,14 @@
           "severity": "high"
         },
         {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "'✓.'",
-          "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "','",
-          "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "'•'",
-          "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "','",
-          "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "'<b>~</b>'",
-          "severity": "high"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'✓_'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'✓.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'✓_'",
-          "severity": "low"
-        },
-        {
-          "code": "CELL_ROW_SPLIT",
-          "message": "Two consecutive rows appear to be a single logical row split by the extractor.",
-          "evidence": "Row 15 label='Hong Kong dollar' | Row 16 label='interbank transfer'",
-          "severity": "high"
-        },
-        {
           "code": "PHANTOM_CONTENT",
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "Check credit card transactions",
           "severity": "high"
-        },
-        {
-          "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
-          "evidence": " HSBC<br>Internet Banking HSBC<br>Mobile Banking Phonebanking  Self-service<br>banking ",
-          "severity": "medium"
         }
       ],
       "table_excerpt": "|  | HSBC<br>Internet Banking | HSBC<br>Mobile Banking | Phonebanking |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
       "notes": []
     },
     {
@@ -306,30 +121,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "Payment services – remittances Inward payments  Telegraphic transfer Payment of demand draft drawn on HSBC in Hong Kong "
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'A1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'A2.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'C1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'C2.'"
         },
         {
           "rule_id": "R07",
@@ -404,30 +195,6 @@
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Payment services – remittances Inward payments  Telegraphic transfer Payment of demand draft drawn on HSBC in Hong Kong ",
           "severity": "high"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'A1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'A2.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'C1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'C2.'",
-          "severity": "low"
         },
         {
           "code": "PHANTOM_CONTENT",
@@ -542,54 +309,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "Annualised Percentage Rate (APR)"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "'<b>G</b> .'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'C4.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'C5.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'——<br>D.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'F.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'G1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'01.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'G2.'"
         },
         {
           "rule_id": "R07",
@@ -894,54 +613,6 @@
           "severity": "high"
         },
         {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "'<b>G</b> .'",
-          "severity": "high"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'C4.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'C5.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'——<br>D.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'F.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'G1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'01.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'G2.'",
-          "severity": "low"
-        },
-        {
           "code": "PHANTOM_CONTENT",
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "Interbank funds transfers Payment through Real Time Gross Settlement (RTGS)",
@@ -1226,51 +897,9 @@
       "section": "H. Special privileges for HSBC Jade",
       "pdf_table_index": 6,
       "pdf_match_confidence": 0.526,
-      "verdict": "INCORRECT",
-      "confidence": 0.99,
+      "verdict": "REVIEW",
+      "confidence": 0.46,
       "triggered_rules": [
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'2.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'3.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'4.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'5.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'6.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'<del>-</del> 7.'"
-        },
         {
           "rule_id": "R09",
           "rule_name": "Missing numeric / currency value",
@@ -1280,48 +909,6 @@
       ],
       "errors": [
         {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'2.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'3.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'4.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'5.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'6.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'<del>-</del> 7.'",
-          "severity": "low"
-        },
-        {
           "code": "MISSING_NUMERIC",
           "message": "Empty cell in a column that should contain a numeric/currency value.",
           "evidence": "Row 6, col 2 (header='SI'): empty",
@@ -1329,8 +916,10 @@
         }
       ],
       "table_excerpt": "| Н. | SI |",
-      "suggested_fix": "Review the flagged cells against the original PDF table.",
-      "notes": []
+      "suggested_fix": "Check for column shift or dropped numeric values and restore them from the source PDF.",
+      "notes": [
+        "Triggered rules found, but combined confidence 0.46 is below the incorrect threshold 0.55."
+      ]
     },
     {
       "table_id": "table_005",
@@ -1374,102 +963,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "Mortgage services Change of Mortgage Plan Change of repayment plan Request for each extra copy of documents"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'G3.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'Н.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'2.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'3.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'4.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'5.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'6.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'7.1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'7.2.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'I.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'2.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'3.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'4.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'5.'"
         },
         {
           "rule_id": "R07",
@@ -1552,102 +1045,6 @@
           "severity": "high"
         },
         {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'G3.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'Н.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'2.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'3.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'4.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'5.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'6.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'7.1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'7.2.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'I.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'2.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'3.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'4.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'5.'",
-          "severity": "low"
-        },
-        {
           "code": "PHANTOM_CONTENT",
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "Mastercard Debit Card Annual fee Overseas ATM cash withdrawal Local ATM cash withdrawal Foreign currency transaction fee",
@@ -1711,7 +1108,7 @@
       "pdf_table_index": 1,
       "pdf_match_confidence": 0.504,
       "verdict": "INCORRECT",
-      "confidence": 0.99,
+      "confidence": 0.973,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -1724,18 +1121,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "General services - all accounts Cashier's order Coins changing/withdrawal/exchange to notes Coins paid-in Bulk cash depo"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'7.1.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'7.2.'"
         },
         {
           "rule_id": "R07",
@@ -1768,18 +1153,6 @@
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "General services - all accounts Cashier's order Coins changing/withdrawal/exchange to notes Coins paid-in Bulk cash depo",
           "severity": "high"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'7.1.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'7.2.'",
-          "severity": "low"
         },
         {
           "code": "PHANTOM_CONTENT",
@@ -1818,24 +1191,6 @@
       "confidence": 0.99,
       "triggered_rules": [
         {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Waive' | 'ed'"
-        },
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Waive' | 'ed'"
-        },
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Waive' | 'ed'"
-        },
-        {
           "rule_id": "R03",
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
@@ -1852,24 +1207,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "Waived Waived"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "'aived //'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'HK\\\\$60 per customer p.a.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'2. Customer has to set up autopay from his/her HSBC Jade, HSBC Premier or HSBC Or account for the annual safe deposit box rental fee.'"
         },
         {
           "rule_id": "R07",
@@ -2048,24 +1385,6 @@
       ],
       "errors": [
         {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Waive' | 'ed'",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Waive' | 'ed'",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Waive' | 'ed'",
-          "severity": "high"
-        },
-        {
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Personal Customer Personal Integrated Account",
@@ -2082,24 +1401,6 @@
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Waived Waived",
           "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "'aived //'",
-          "severity": "high"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'HK\\\\$60 per customer p.a.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'2. Customer has to set up autopay from his/her HSBC Jade, HSBC Premier or HSBC Or account for the annual safe deposit box rental fee.'",
-          "severity": "low"
         },
         {
           "code": "PHANTOM_CONTENT",
@@ -2277,7 +1578,7 @@
         }
       ],
       "table_excerpt": "| A1. General services – all accounts |  |  |  |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
       "notes": []
     },
     {
@@ -2294,24 +1595,6 @@
       "confidence": 0.99,
       "triggered_rules": [
         {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Waive' | 'ed'"
-        },
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Waive' | 'ed'"
-        },
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Wai' | 'ved'"
-        },
-        {
           "rule_id": "R03",
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
@@ -2322,12 +1605,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "Waived Waived"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "'•'"
         },
         {
           "rule_id": "R07",
@@ -2388,33 +1665,9 @@
           "rule_name": "Phantom / OCR noise content",
           "confidence_weight": 0.51,
           "matched_evidence": "To a third party account with HSBC using Bank's standard form not submitted at branch"
-        },
-        {
-          "rule_id": "R12",
-          "rule_name": "Truncated text",
-          "confidence_weight": 0.47,
-          "matched_evidence": "cation for copy of voice call record and"
         }
       ],
       "errors": [
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Waive' | 'ed'",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Waive' | 'ed'",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Wai' | 'ved'",
-          "severity": "high"
-        },
         {
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
@@ -2425,12 +1678,6 @@
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Waived Waived",
-          "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "'•'",
           "severity": "high"
         },
         {
@@ -2492,16 +1739,10 @@
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "To a third party account with HSBC using Bank's standard form not submitted at branch",
           "severity": "high"
-        },
-        {
-          "code": "TRUNCATED_TEXT",
-          "message": "Cell text ends abruptly on a common word, suggesting truncation.",
-          "evidence": "cation for copy of voice call record and",
-          "severity": "medium"
         }
       ],
       "table_excerpt": "| A1. General services – all accounts |  |  |  |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
       "notes": []
     },
     {
@@ -3004,18 +2245,6 @@
           "matched_evidence": "Waived Waived"
         },
         {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "'\\\\'"
-        },
-        {
-          "rule_id": "R04",
-          "rule_name": "Corrupted symbol",
-          "confidence_weight": 0.55,
-          "matched_evidence": "','"
-        },
-        {
           "rule_id": "R07",
           "rule_name": "Phantom / OCR noise content",
           "confidence_weight": 0.51,
@@ -3057,18 +2286,6 @@
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Waived Waived",
-          "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "'\\\\'",
-          "severity": "high"
-        },
-        {
-          "code": "CORRUPTED_SYMBOL",
-          "message": "Cell contains a noise character where a symbol (✓/✗) is expected.",
-          "evidence": "','",
           "severity": "high"
         },
         {
@@ -3310,15 +2527,9 @@
       "section": "Page 11",
       "pdf_table_index": 3,
       "pdf_match_confidence": 0.933,
-      "verdict": "INCORRECT",
-      "confidence": 0.862,
+      "verdict": "REVIEW",
+      "confidence": 0.54,
       "triggered_rules": [
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Waived' | 'f'"
-        },
         {
           "rule_id": "R03",
           "rule_name": "Merged cell collapse",
@@ -3328,12 +2539,6 @@
       ],
       "errors": [
         {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Waived' | 'f'",
-          "severity": "high"
-        },
-        {
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Personal Integrated Account",
@@ -3341,8 +2546,10 @@
         }
       ],
       "table_excerpt": "| C3. Global Transfers |  |  |  |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
-      "notes": []
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
+      "notes": [
+        "Triggered rules found, but combined confidence 0.54 is below the incorrect threshold 0.55."
+      ]
     },
     {
       "table_id": "table_015",
@@ -3357,12 +2564,6 @@
       "verdict": "INCORRECT",
       "confidence": 0.99,
       "triggered_rules": [
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Item C' | 'harge'"
-        },
         {
           "rule_id": "R03",
           "rule_name": "Merged cell collapse",
@@ -3552,12 +2753,6 @@
       ],
       "errors": [
         {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Item C' | 'harge'",
-          "severity": "high"
-        },
-        {
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Personal Integrated Account",
@@ -3745,7 +2940,7 @@
         }
       ],
       "table_excerpt": "| C4. Interbank fund transfers |  |  |  |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
       "notes": []
     },
     {
@@ -3983,7 +3178,7 @@
       "pdf_table_index": 4,
       "pdf_match_confidence": 0.456,
       "verdict": "INCORRECT",
-      "confidence": 0.953,
+      "confidence": 0.903,
       "triggered_rules": [
         {
           "rule_id": "R03",
@@ -4002,12 +3197,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "Personal Integrated Account"
-        },
-        {
-          "rule_id": "R10",
-          "rule_name": "Caption absorbed into table",
-          "confidence_weight": 0.52,
-          "matched_evidence": "Item Below balance fee <sup>1</sup> (based on average Total Relationship Balance over the last three"
         }
       ],
       "errors": [
@@ -4028,12 +3217,6 @@
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Personal Integrated Account",
           "severity": "high"
-        },
-        {
-          "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
-          "evidence": "Item Below balance fee <sup>1</sup> (based on average Total Relationship Balance over the last three",
-          "severity": "medium"
         }
       ],
       "table_excerpt": "| Item | Below balance fee <sup>1</sup> (based on average Total Relationship Balance over the last three months) |",
@@ -4262,18 +3445,6 @@
       "confidence": 0.99,
       "triggered_rules": [
         {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'waived' | 'waived'"
-        },
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'waived' | 'waived'"
-        },
-        {
           "rule_id": "R03",
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
@@ -4308,18 +3479,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "*The fee relating to foreign currency transactions applicable for HK dollar personal credit cards and USD Visa Gold Card"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'Total amount of outstanding monthly handling fee for the remaining Instalment Period plus any interest (if applicable) and an administration fee of HKD300.'"
-        },
-        {
-          "rule_id": "R05",
-          "rule_name": "Trailing artifact",
-          "confidence_weight": 0.57,
-          "matched_evidence": "'p.a.'"
         },
         {
           "rule_id": "R07",
@@ -4482,33 +3641,9 @@
           "rule_name": "Extra columns (column count inflation)",
           "confidence_weight": 0.54,
           "matched_evidence": "10/13 header cells are empty"
-        },
-        {
-          "rule_id": "R12",
-          "rule_name": "Truncated text",
-          "confidence_weight": 0.47,
-          "matched_evidence": "n fee of HKD300. For RMB sub-account N/A"
-        },
-        {
-          "rule_id": "R12",
-          "rule_name": "Truncated text",
-          "confidence_weight": 0.47,
-          "matched_evidence": "erchant to provide the exchange rate and"
         }
       ],
       "errors": [
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'waived' | 'waived'",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'waived' | 'waived'",
-          "severity": "high"
-        },
         {
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
@@ -4544,18 +3679,6 @@
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "*The fee relating to foreign currency transactions applicable for HK dollar personal credit cards and USD Visa Gold Card",
           "severity": "high"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'Total amount of outstanding monthly handling fee for the remaining Instalment Period plus any interest (if applicable) and an administration fee of HKD300.'",
-          "severity": "low"
-        },
-        {
-          "code": "TRAILING_ARTIFACT",
-          "message": "Cell has a trailing artifact (underscore, stray dash/period).",
-          "evidence": "'p.a.'",
-          "severity": "low"
         },
         {
           "code": "PHANTOM_CONTENT",
@@ -4718,22 +3841,10 @@
           "message": "Table has an unusually large number of empty header columns.",
           "evidence": "10/13 header cells are empty",
           "severity": "medium"
-        },
-        {
-          "code": "TRUNCATED_TEXT",
-          "message": "Cell text ends abruptly on a common word, suggesting truncation.",
-          "evidence": "n fee of HKD300. For RMB sub-account N/A",
-          "severity": "medium"
-        },
-        {
-          "code": "TRUNCATED_TEXT",
-          "message": "Cell text ends abruptly on a common word, suggesting truncation.",
-          "evidence": "erchant to provide the exchange rate and",
-          "severity": "medium"
         }
       ],
       "table_excerpt": "| G. Cards |  |  |  |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
       "notes": []
     },
     {
@@ -4947,20 +4058,8 @@
       "pdf_table_index": 1,
       "pdf_match_confidence": 0.975,
       "verdict": "INCORRECT",
-      "confidence": 0.98,
+      "confidence": 0.775,
       "triggered_rules": [
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Wa' | 'ved'"
-        },
-        {
-          "rule_id": "R01",
-          "rule_name": "Cell boundary bleed",
-          "confidence_weight": 0.7,
-          "matched_evidence": "'Wai' | 'ved'"
-        },
         {
           "rule_id": "R03",
           "rule_name": "Merged cell collapse",
@@ -4976,18 +4075,6 @@
       ],
       "errors": [
         {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Wa' | 'ved'",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_BOUNDARY_BLEED",
-          "message": "A word appears to be split across adjacent cells.",
-          "evidence": "'Wai' | 'ved'",
-          "severity": "high"
-        },
-        {
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "Personal Integrated Account",
@@ -5001,7 +4088,7 @@
         }
       ],
       "table_excerpt": "| G3. Mastercard Debit Card/Mastercard Supplementary Debit Card |  |  |  |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
       "notes": []
     },
     {
@@ -5070,18 +4157,6 @@
           "rule_name": "Merged cell collapse",
           "confidence_weight": 0.54,
           "matched_evidence": "HSBC Best Lending Rate + 4% per annum"
-        },
-        {
-          "rule_id": "R06",
-          "rule_name": "Row split (single logical row → multiple rows)",
-          "confidence_weight": 0.52,
-          "matched_evidence": "Row 15 label='- All others' | Row 16 label='via HSBC branches (telegraphic transfer)'"
-        },
-        {
-          "rule_id": "R06",
-          "rule_name": "Row split (single logical row → multiple rows)",
-          "confidence_weight": 0.52,
-          "matched_evidence": "Row 23 label='with other local banks' | Row 24 label='via HSBC Internet Banking/HSBC Mobile Banking'"
         },
         {
           "rule_id": "R07",
@@ -5178,18 +4253,6 @@
           "rule_name": "Phantom / OCR noise content",
           "confidence_weight": 0.51,
           "matched_evidence": "Change of repayment plan General change, e.g. instalment amount, loan tenure, repayment option/frequency"
-        },
-        {
-          "rule_id": "R10",
-          "rule_name": "Caption absorbed into table",
-          "confidence_weight": 0.52,
-          "matched_evidence": "HSBC Jade brings you full fee waivers or preferential offers for sele ected products and services."
-        },
-        {
-          "rule_id": "R12",
-          "rule_name": "Truncated text",
-          "confidence_weight": 0.47,
-          "matched_evidence": "enminbi outward payment to the credit of"
         }
       ],
       "errors": [
@@ -5245,18 +4308,6 @@
           "code": "MERGED_CELL_COLLAPSE",
           "message": "Multiple distinct values are concatenated inside a single cell.",
           "evidence": "HSBC Best Lending Rate + 4% per annum",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_ROW_SPLIT",
-          "message": "Two consecutive rows appear to be a single logical row split by the extractor.",
-          "evidence": "Row 15 label='- All others' | Row 16 label='via HSBC branches (telegraphic transfer)'",
-          "severity": "high"
-        },
-        {
-          "code": "CELL_ROW_SPLIT",
-          "message": "Two consecutive rows appear to be a single logical row split by the extractor.",
-          "evidence": "Row 23 label='with other local banks' | Row 24 label='via HSBC Internet Banking/HSBC Mobile Banking'",
           "severity": "high"
         },
         {
@@ -5354,22 +4405,10 @@
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "Change of repayment plan General change, e.g. instalment amount, loan tenure, repayment option/frequency",
           "severity": "high"
-        },
-        {
-          "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
-          "evidence": "HSBC Jade brings you full fee waivers or preferential offers for sele ected products and services.",
-          "severity": "medium"
-        },
-        {
-          "code": "TRUNCATED_TEXT",
-          "message": "Cell text ends abruptly on a common word, suggesting truncation.",
-          "evidence": "enminbi outward payment to the credit of",
-          "severity": "medium"
         }
       ],
       "table_excerpt": "| HSBC Jade brings you full fee waivers or preferential offers for sele | ected products and services. |",
-      "suggested_fix": "Re-check PDF cell segmentation; reconstruct the row from the original PDF bounding box.",
+      "suggested_fix": "Verify that the source PDF has the correct number of columns; split concatenated values.",
       "notes": []
     },
     {
@@ -5700,24 +4739,6 @@
           "rule_name": "Phantom / OCR noise content",
           "confidence_weight": 0.51,
           "matched_evidence": "Overdraft Protection interest rate"
-        },
-        {
-          "rule_id": "R10",
-          "rule_name": "Caption absorbed into table",
-          "confidence_weight": 0.52,
-          "matched_evidence": "HSBC Premier brings you full fee waivers or preferential offer of up to 50% % off on selected bankin"
-        },
-        {
-          "rule_id": "R12",
-          "rule_name": "Truncated text",
-          "confidence_weight": 0.47,
-          "matched_evidence": "mer with a Total Relationship Balance of"
-        },
-        {
-          "rule_id": "R12",
-          "rule_name": "Truncated text",
-          "confidence_weight": 0.47,
-          "matched_evidence": "nt to the credit of an account held with"
         }
       ],
       "errors": [
@@ -5876,24 +4897,6 @@
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "Overdraft Protection interest rate",
           "severity": "high"
-        },
-        {
-          "code": "CAPTION_IN_TABLE",
-          "message": "The header row appears to be a prose caption rather than column labels.",
-          "evidence": "HSBC Premier brings you full fee waivers or preferential offer of up to 50% % off on selected bankin",
-          "severity": "medium"
-        },
-        {
-          "code": "TRUNCATED_TEXT",
-          "message": "Cell text ends abruptly on a common word, suggesting truncation.",
-          "evidence": "mer with a Total Relationship Balance of",
-          "severity": "medium"
-        },
-        {
-          "code": "TRUNCATED_TEXT",
-          "message": "Cell text ends abruptly on a common word, suggesting truncation.",
-          "evidence": "nt to the credit of an account held with",
-          "severity": "medium"
         }
       ],
       "table_excerpt": "| HSBC Premier brings you full fee waivers or preferential offer of up to 50% | % off on selected banking services. |",
@@ -5960,12 +4963,6 @@
           "rule_name": "Phantom / OCR noise content",
           "confidence_weight": 0.51,
           "matched_evidence": "Bulk cheque deposit (per customer per day)"
-        },
-        {
-          "rule_id": "R10",
-          "rule_name": "Caption absorbed into table",
-          "confidence_weight": 0.52,
-          "matched_evidence": "Change of repayment plan<br>General change, e.g. instalment amount, loan tenure,<br>repayment option"
         }
       ],
       "errors": [
@@ -6016,12 +5013,6 @@
           "message": "Cell contains OCR noise text absent from the source document.",
           "evidence": "Bulk cheque deposit (per customer per day)",
           "severity": "high"
-        },
-        {
-          "code": "CAPTION_IN_TABLE",
-          "message": "First body row appears to be a prose caption absorbed into the table.",
-          "evidence": "Change of repayment plan<br>General change, e.g. instalment amount, loan tenure,<br>repayment option",
-          "severity": "medium"
         }
       ],
       "table_excerpt": "| Items | Special privileges |",
@@ -6076,7 +5067,8 @@
   "summary": {
     "total_tables": 28,
     "correct_tables": 0,
-    "incorrect_tables": 28,
+    "review_tables": 2,
+    "incorrect_tables": 26,
     "uncertain_pdf_matches": 0
   }
 }
