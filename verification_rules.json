@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "description": "LLM-summarized pattern rules for verifying PDF-to-Markdown table conversion accuracy. Each rule has detection logic, severity weights, false-positive guards, and an LLM-assisted detection prompt template.",
+  "confidence_thresholds": {
+    "correct": 0.80,
+    "review": 0.60
+  },
+  "rules": [
+    {
+      "rule_id": "footnote_mismatch",
+      "rule_name": "Footnote Number and Anchor Consistency",
+      "description": "MD table footnote superscripts must match PDF footnote anchors exactly — no renumbering, no merging with page-level footnotes, no dropped anchors. PDF footnotes are numbered starting from the table's own region; MD must not prepend page-level footnotes that renumber the sequence.",
+      "severity_weight": 0.25,
+      "severity": "major",
+      "false_positive_guards": [
+        "Guard: If PDF has zero footnotes for the table region, suppress this rule entirely — no footnotes expected.",
+        "Guard: If the MD has the same footnote superscripts as the PDF in all rows, no mismatch exists.",
+        "Guard: If a footnote superscript is present in a row where PDF anchors it, do not flag as dropped anchor.",
+        "Guard: If the footnote block at section end has the same count and text as PDF, suppress."
+      ],
+      "detection_heuristic": {
+        "method": "string_match",
+        "description": "Extract footnote superscripts from MD cell text (e.g. '<sup>1</sup>', '¹', '^1^'). Compare against PDF footnote anchors. Detect renumbering, missing anchors, or extra anchors.",
+        "pattern_md": "(?:<sup>(\\d+)</sup>|(\\d+)⁻?|\\^(\\d+)\\^)",
+        "pattern_pdf_anchor": "(?:¹|²|³|⁴|⁵|⁶|¹¹|¹²)"
+      },
+      "detection_prompt_template": "SYSTEM: You are a document verification assistant. Compare the markdown table cells against the PDF table cells. Identify any footnote superscript inconsistencies.\n\nUSER: PDF table row: '{pdf_row}'\nMD table row: '{md_row}'\nPDF footnotes: {pdf_footnotes}\n\nDoes the markdown row correctly preserve the PDF footnote anchors? If not, explain the mismatch."
+    },
+    {
+      "rule_id": "cell_boundary_bleed",
+      "rule_name": "Cell Boundary Bleed Detection",
+      "description": "Short isolated fragments (1–4 chars) at cell boundaries — such as 'ed', 'ved', 'cable', 'fee' — indicate words that were incorrectly split across cell boundaries during PDF-to-MD conversion. Longer fragments that do not complete a known word are likely OCR artifacts.",
+      "severity_weight": 0.15,
+      "severity": "major",
+      "false_positive_guards": [
+        "Guard: Fragment length <= 2 chars AND adjacent cells are non-empty → suppress (line-wrap artifact, not a real bleed).",
+        "Guard: Fragment is purely numeric or a currency symbol (HK$, RMB, US$) → suppress (cell separator noise).",
+        "Guard: Fragment is a single punctuation mark (, . -) → suppress (not a word bleed).",
+        "Guard: Fragment matches the start of a word that is not present in any adjacent cell content → suppress (likely genuine short text).",
+        "Guard: Fragment 3–4 chars could complete a nearby word tail (e.g. 'ved' completing 'Wai ved') → flag as real bleed."
+      ],
+      "detection_heuristic": {
+        "method": "fragment_analysis",
+        "description": "Scan every row for isolated fragments <= 4 chars adjacent to cells with content. Check if fragment could complete a nearby word tail.",
+        "min_fragment_len": 1,
+        "max_fragment_len": 4,
+        "suspicious_patterns": ["ed$", "^ved", "^fee", "^harge", "^ree", "^able"]
+      },
+      "detection_prompt_template": "SYSTEM: You are a document verification assistant. Detect cell boundary bleeds in markdown tables converted from PDFs.\n\nUSER: MD table row: '{md_row}'\n\nIdentify any cell boundary bleeds — short fragments that appear to be words split across cells. Report the fragment and what word it likely belongs to."
+    },
+    {
+      "rule_id": "cell_content_substitution",
+      "rule_name": "Cell Content Value Consistency",
+      "description": "Cell values in the MD must not differ from the PDF. N/A must not become Waived or any other value. Values must not migrate to the wrong column. Column alignment must be preserved — the value in MD column N must correspond to the value in PDF column N.",
+      "severity_weight": 0.30,
+      "severity": "critical",
+      "false_positive_guards": [
+        "Guard: If PDF and MD both show 'N/A' (case-insensitive) → correct, suppress.",
+        "Guard: If PDF shows 'N/A' but MD shows 'Not applicable' or similar paraphrase → flag as substitution.",
+        "Guard: If PDF shows 'Waived' but MD shows 'No charge' → flag as substitution (semantically similar but not identical).",
+        "Guard: If PDF shows a monetary value (HK$100) and MD shows a different monetary value → flag as substitution.",
+        "Guard: Values that differ only in whitespace or HTML tag formatting (e.g., '<br>' vs newline) → correct, suppress.",
+        "Guard: Currency-only differences (HK$ 100 vs HK$100) → suppress (formatting noise)."
+      ],
+      "detection_heuristic": {
+        "method": "direct_comparison",
+        "description": "Compare each cell in the MD table against the corresponding cell in the PDF table. Detect: value substitution (N/A → Waived), column shift (wrong column), or missing values.",
+        "normalization": ["strip_whitespace", "case_insensitive", "html_tags_stripped", "nbsp_to_space"]
+      },
+      "detection_prompt_template": "SYSTEM: You are a document verification assistant. Check if markdown table cells match the PDF source cells.\n\nUSER: PDF table cells:\n{pdf_cells}\n\nMD table cells:\n{md_cells}\n\nAre the cell values consistent? Identify any cells where the MD value differs from the PDF value. List each mismatched cell with the PDF value and MD value."
+    },
+    {
+      "rule_id": "row_merge_error",
+      "rule_name": "Row Hierarchy and Merge Detection",
+      "description": "MD must not collapse child rows into parent rows. Bullet sub-items and indented sub-rows under a parent item in the PDF must remain as separate rows in the MD. The MD row count must approximately match the PDF row count. Merging loses hierarchical relationship and can attach child item values to the wrong parent.",
+      "severity_weight": 0.20,
+      "severity": "major",
+      "false_positive_guards": [
+        "Guard: If the PDF row count equals the MD row count (±1 for header row), no merge has occurred.",
+        "Guard: If a PDF row has no children (no sub-bullets or indented continuation), merging with a sibling row is acceptable.",
+        "Guard: If a child row in the PDF has the same content as the parent (duplicate rows) → no merge error.",
+        "Guard: If both PDF and MD contain a bullet sub-item on a separate row → no merge error.",
+        "Guard: If MD has more rows than PDF → row split, not merge; do not flag under this rule."
+      ],
+      "detection_heuristic": {
+        "method": "row_count_and_hierarchy",
+        "description": "Count PDF rows vs MD rows. Detect if PDF has bullet-prefixed or indented sub-rows that are missing from MD. Check if a single MD row contains content that should be on separate rows.",
+        "bullet_indicators": ["•", "-", "*", "–", "—", "○", "‣"]
+      },
+      "detection_prompt_template": "SYSTEM: You are a document verification assistant. Detect if markdown table rows have been incorrectly merged during PDF-to-MD conversion.\n\nUSER: PDF table rows:\n{pdf_rows}\n\nMD table rows:\n{md_rows}\n\nCheck if any child rows or sub-items from the PDF are missing from the MD. If the MD has fewer rows than expected, report which content appears to have been merged."
+    },
+    {
+      "rule_id": "column_structure_error",
+      "rule_name": "Column Header and Structure Consistency",
+      "description": "Column headers and column counts must match between PDF and MD. Account tier columns (Personal Customer, HSBC One, HSBC Premier, HSBC Jade) must not be merged. The first column (Item/Service) and the data columns must align correctly. Header text must contain key terms from the PDF header.",
+      "severity_weight": 0.25,
+      "severity": "major",
+      "false_positive_guards": [
+        "Guard: If column count matches exactly, suppress this rule — no structure error.",
+        "Guard: If column count differs by 1 and the difference is a header group spanning multiple PDF columns that was flattened into one MD column → flag as structure error.",
+        "Guard: If column headers in MD contain all key terms from PDF headers (case-insensitive) → suppress.",
+        "Guard: If the first column is 'Item' or 'Service' in both PDF and MD → suppress.",
+        "Guard: If data values are shifted but the column count is the same → this is a cell_content_substitution issue, not a column structure error."
+      ],
+      "detection_heuristic": {
+        "method": "header_and_count_comparison",
+        "description": "Compare PDF column count and header text against MD column count and header text. Detect merged headers, missing columns, or reordered columns.",
+        "key_terms": ["customer", "account", "premier", "jade", "one", "personal", "integrated", "item", "service", "annual", "fee"]
+      },
+      "detection_prompt_template": "SYSTEM: You are a document verification assistant. Check if the column structure of a markdown table matches the PDF source table.\n\nUSER: PDF table headers: {pdf_headers}\nMD table headers: {md_headers}\n\nDo the column structure and headers match? Identify any merged headers, missing columns, or reordered columns."
+    },
+    {
+      "rule_id": "footnote_order_error",
+      "rule_name": "Footnote Superscript Order Preservation",
+      "description": "Footnote superscript ordering within cells must match the PDF reading order. For example, if the PDF shows footnotes ² then ¹ then ³ on the same row, the MD must not reorder them to ¹, ², ³. Normalization of superscripts to ascending order is a conversion error.",
+      "severity_weight": 0.15,
+      "severity": "minor",
+      "false_positive_guards": [
+        "Guard: If MD has no footnote superscripts → suppress.",
+        "Guard: If superscripts appear in ascending order in both PDF and MD → no error.",
+        "Guard: If the PDF has only one superscript per cell → order is trivially preserved.",
+        "Guard: If MD reorders superscripts but the footnote block at section end correctly maps them → flag as cosmetic order error (minor).",
+        "Guard: If reordering causes a footnote to reference the wrong footnote text → upgrade to major severity."
+      ],
+      "detection_heuristic": {
+        "method": "superscript_order_comparison",
+        "description": "Extract footnote superscript sequences from PDF cells and MD cells. Compare reading order. Detect normalization to ascending order.",
+        "pattern": "(?:<sup>([\\d, ]+)</sup>|([\\d⁰¹²³⁴⁵⁶⁷⁸⁹, ]+))"
+      },
+      "detection_prompt_template": "SYSTEM: You are a document verification assistant. Check if footnote superscript order was preserved during PDF-to-MD conversion.\n\nUSER: PDF cell: '{pdf_cell}'\nMD cell: '{md_cell}'\n\nWas the footnote superscript order preserved? If not, describe the reordering."
+    }
+  ]
+}

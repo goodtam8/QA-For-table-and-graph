@@ -1,0 +1,926 @@
+{
+  "tables": [
+    {
+      "table_id": "T01",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 3,
+      "pdf_section": "Tips to save you time and effort",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "",
+          "HSBC Internet Banking",
+          "HSBC Mobile Banking",
+          "Phonebanking (Automated)",
+          "Phonebanking (Personal)",
+          "Self-service banking"
+        ],
+        ["Check balance", "✓", "✓", "✓", "✓", "✓"],
+        ["Deposit", "", "", "", "", "✓"],
+        ["Withdrawal", "", "", "", "", "✓"],
+        ["Transfer", "✓", "✓", "✓", "✓", "✓"],
+        ["Pay bills", "✓", "✓", "✓", "", "✓"],
+        ["Trade securities", "✓", "✓", "✓", "✓", ""],
+        ["Trade unit trusts", "✓", "", "✓", "✓", ""],
+        ["Place Time Deposits", "✓", "✓", "", "✓", ""],
+        ["Place Deposit Plus", "✓", "✓", "", "✓", ""],
+        ["Buy insurance", "✓", "✓²", "", "✓²", "✓²"],
+        ["Outward telegraphic transfer", "✓", "✓", "✓³", "✓⁴", ""],
+        ["Global Transfers", "✓", "✓", "", "", ""],
+        ["Other global payments", "", "✓⁶", "", "", ""],
+        ["Hong Kong dollar interbank transfer", "✓", "✓", "", "", ""],
+        ["Foreign Currency Exchange Services", "✓", "✓", "", "", "✓⁵"],
+        ["Passbook update", "", "", "", "", "✓"],
+        ["Personal information update", "✓", "", "", "✓", ""],
+        ["Cheque-book request", "", "", "✓", "✓", "✓"],
+        ["Check credit card transactions", "✓", "✓", "", "✓", ""],
+        ["Set up Standing Instructions", "✓", "✓", "", "", ""]
+      ],
+      "md_table": "| Service | **HSBC Internet Banking** | **HSBC Mobile Banking** | **Phonebanking Automated** | **Phonebanking Personal** | **Self-service banking** |\n|---|---|---|---|---|---|\n| Check balance | ✓ | ✓ | ✓ | ✓ | ✓ |\n| Deposit | N/A | N/A | N/A | N/A | ✓ |\n| Withdrawal | N/A | N/A | N/A | N/A | ✓ |\n| Transfer | ✓ | ✓ | ✓ | ✓ | ✓ |\n| Pay bills | ✓ | ✓ | ✓ | ✓ | N/A |\n| Trade securities | ✓ | ✓ | ✓ | ✓ | N/A |\n| Trade unit trusts | ✓ | ✓ | N/A | ✓ | N/A |\n| Place Time Deposits | ✓ | ✓ | N/A | ✓ | N/A |\n| Place Deposit Plus | ✓ | ✓ | N/A | ✓ | N/A |\n| Buy insurance | ✓ | ✓<sup>2</sup> | N/A | ✓<sup>2</sup> | N/A |\n| Outward telegraphic transfer | ✓ | ✓ | N/A | ✓<sup>3</sup> | ✓<sup>4</sup> |\n| Global Transfers | ✓ | ✓ | N/A | N/A | N/A |\n| Other global payments | N/A | ✓<sup>6</sup> | N/A | N/A | N/A |\n| Hong Kong dollar interbank transfer | ✓ | ✓ | N/A | N/A | N/A |\n| Foreign Currency Exchange Services | ✓ | ✓ | N/A | N/A | ✓<sup>5</sup> |\n| Passbook update | N/A | N/A | N/A | N/A | ✓ |\n| Personal information update | ✓ | ✓ | N/A | N/A | N/A |\n| Cheque-book request | ✓ | ✓ | N/A | ✓ | N/A |\n| Check credit card transactions | ✓ | ✓ | ✓ | N/A | N/A |\n| Set up Standing Instructions | ✓ | ✓ | N/A | N/A | N/A |",
+      "label": "INCORRECT",
+      "error_reason": "FOOTNOTE_MISMATCH: PDF footnotes are numbered 1-6 but MD conversion renumbers them 1-8 (adding 2 page-level footnotes at the top). Footnote superscripts in table cells (e.g. ✓² for 'Buy insurance', ✓⁶ for 'Other global payments') no longer match the MD footnote block where the same notes appear as [3]-[8].  'Buy insurance' row has ✓² in Phonebanking Personal and Self-service banking columns in the PDF but the MD shows N/A for Self-service banking — a cell content error.",
+      "pdf_footnotes": {
+        "1": "Unit trusts trading is not applicable.",
+        "2": "Applies to travel and home insurance only.",
+        "3": "Applies to remittance enquiry only.",
+        "4": "Also applies to outward telegraphic transfer on standing instruction basis.",
+        "5": "Support cash withdrawal of 4 major foreign currencies; JPY, USD, EUR, RMB at Foreign Currency Machines and RMB cash withdrawal at designated ATMs.",
+        "6": "Applies to supported countries/regions in local currencies' transfer."
+      }
+    },
+    {
+      "table_id": "T02",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 6,
+      "pdf_section": "A1. General services – all accounts",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "Personal Customer",
+          "Personal Integrated Account",
+          "HSBC One",
+          "HSBC Premier",
+          "HSBC Jade"
+        ],
+        [
+          "Cashier's order¹\n• Issue/repurchase a cashier's order\n(This charge will be waived if the repurchase of cashier's order follows the cheque clearing process)",
+          "HK$75",
+          "HK$60",
+          "HK$40",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "• Loss of a cashier's order",
+          "HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued",
+          "HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued",
+          "HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued",
+          "HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued",
+          "HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued"
+        ],
+        [
+          "• Additional fee for handling instructions not using Bank's standard form (where accepted by the Bank)",
+          "HK$150",
+          "HK$150",
+          "HK$150",
+          "HK$150",
+          "HK$150"
+        ],
+        [
+          "Coins changing/withdrawal/exchange to notes\nEach bag of coins",
+          "HK$2",
+          "HK$2",
+          "HK$1",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Coins paid-in (must be pre-sorted, per customer per day)\n• Below 500 coins",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Coins paid-in (must be pre-sorted, per customer per day)\n• 500 coins or more",
+          "2% of the full amount paid-in\n(minimum HK$50)",
+          "2% of the full amount paid-in\n(minimum HK$50)",
+          "1% of the full amount paid-in\n(minimum HK$25)",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Bulk cash deposit - Hong Kong dollar notes (per customer per day)\n• Up to 200 pieces of notes",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Bulk cash deposit - Hong Kong dollar notes (per customer per day)\n• Over 200 pieces of notes",
+          "0.25% of the full amount deposited\n(minimum HK$50)",
+          "0.25% of the full amount deposited\n(minimum HK$50)",
+          "0.25% of the full amount deposited\n(minimum HK$50)",
+          "0.25% of the full amount deposited\n(minimum HK$50)",
+          "0.25% of the full amount deposited\n(minimum HK$50)"
+        ],
+        [
+          "Bulk cheque deposit (per customer per day)\n• Up to 30 cheques",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Bulk cheque deposit (per customer per day)\n• Over 30 cheques",
+          "HK$1 per additional cheque²",
+          "HK$1 per additional cheque²",
+          "HK$1 per additional cheque²",
+          "HK$1 per additional cheque²",
+          "HK$1 per additional cheque²"
+        ],
+        [
+          "Renminbi notes deposits/withdrawals",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Foreign currency notes deposits/withdrawals",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Gift cheque (per cheque)\nVia HSBC branches¹",
+          "HK$10",
+          "HK$10",
+          "HK$8",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Paper statement³\nTo receive paper statements",
+          "HK$60 per customer p.a.",
+          "HK$60 per customer p.a.",
+          "HK$60 per customer p.a.",
+          "HK$60 per customer p.a.",
+          "HK$60 per customer p.a."
+        ]
+      ],
+      "md_table": "| Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |\n|---|---|---|---|---|---|\n| Cashier's order<sup>1</sup><br>• Issue/repurchase a cashier's order<br>(This charge will be waived if the repurchase of cashier's order follows the cheque clearing process) | HK$75 | HK$60 | HK$40 | Waived | Waived |\n| • Loss of a cashier's order | HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued | HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued | HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued | HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued | HK$60 plus HK$331 collected on behalf of Hong Kong Interbank Clearing Limited on circulars issued |\n| • Additional fee for handling instructions not using Bank's standard form (where accepted by the Bank) | HK$150 | HK$150 | HK$150 | HK$150 | HK$150 |\n| Coins changing/withdrawal/exchange to notes<br>Each bag of coins | HK$2 | HK$2 | HK$1 | Waived | Waived |\n| Coins paid-in (must be pre-sorted, per customer per day)<br>• Below 500 coins | Waived | Waived | Waived | Waived | Waived |\n| Coins paid-in (must be pre-sorted, per customer per day)<br>• 500 coins or more | 2% of the full amount paid-in<br>(minimum HK$50) | 2% of the full amount paid-in<br>(minimum HK$50) | 1% of the full amount paid-in<br>(minimum HK$25) | Waived | Waived |\n| Bulk cash deposit - Hong Kong dollar notes (per customer per day)<br>• Up to 200 pieces of notes | Waived | Waived | Waived | Waived | Waived |\n| Bulk cash deposit - Hong Kong dollar notes (per customer per day)<br>• Over 200 pieces of notes | 0.25% of the full amount deposited<br>(minimum HK$50) | 0.25% of the full amount deposited<br>(minimum HK$50) | 0.25% of the full amount deposited<br>(minimum HK$50) | 0.25% of the full amount deposited<br>(minimum HK$50) | 0.25% of the full amount deposited<br>(minimum HK$50) |\n| Bulk cheque deposit (per customer per day)<br>• Up to 30 cheques | Waived | Waived | Waived | Waived | Waived |\n| Bulk cheque deposit (per customer per day)<br>• Over 30 cheques | HK$1 per additional cheque<sup>2</sup> | HK$1 per additional cheque<sup>2</sup> | HK$1 per additional cheque<sup>2</sup> | HK$1 per additional cheque<sup>2</sup> | HK$1 per additional cheque<sup>2</sup> |\n| Renminbi notes deposits/withdrawals | Waived | Waived | Waived | Waived | Waived |\n| Foreign currency notes deposits/withdrawals | Waived | Waived | Waived | Waived | Waived |\n| Gift cheque (per cheque)<br>Via HSBC branches<sup>1</sup> | HK$10 | HK$10 | HK$8 | Waived | Waived |\n| Paper statement<sup>3</sup><br>To receive paper statements | HK$60 per customer p.a. | HK$60 per customer p.a. | HK$60 per customer p.a. | HK$60 per customer p.a. | HK$60 per customer p.a. |",
+      "label": "INCORRECT",
+      "error_reason": "FOOTNOTE_ANCHOR_MISPLACEMENT: In the PDF, footnote ¹ is anchored on the 'Cashier's order' row header and also on 'Gift cheque Via HSBC branches'. The MD conversion places <sup>1</sup> only on the Cashier's order item header, correctly, but misses applying it as a row-level marker on 'Gift cheque Via HSBC branches¹'. The footnote anchor on 'Gift cheque' row is dropped in the MD table, creating a false CORRECT appearance for that row.",
+      "pdf_footnotes": {
+        "1": "The following group of customers will be exempted from the fee: aged below 18 or 65 and above, Senior Citizen Card holders, recipients of Government's Comprehensive Social Security Allowance, recipients of Government's Disability Allowance and the physically disabled or visually impaired.",
+        "2": "Waived if the cheques are deposited through cheque deposit machines or other non branch counter channels.",
+        "3": "Effective 1 January 2023, this standard charge applies to Personal Banking HK Dollar Current, SuperEase, HSBC Jade, HSBC Premier, HSBC One, Personal Integrated Account, University Student Account, Cash Card, Renminbi Savings, HK Dollar Statement Savings, CombiNations Statement Savings, Foreign Currency Current or any Credit Card account if account holders receive any paper statement in a full calendar year."
+      }
+    },
+
+    {
+      "table_id": "T03",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 21,
+      "pdf_section": "I. Special privileges for HSBC Premier",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        ["Items", "Special privileges"],
+        [
+          "1. Integrated account services\nBelow balance fee¹ (based on average Total Relationship Balance over the last three months²)\nFor HSBC Premier customer with a Total Relationship Balance of\n• HK$1,000,000 and above\n• Below HK$1,000,000",
+          "Waived\nHK$380 per month"
+        ],
+        [
+          "2. Payment services\nRemittances - Outward payment\nGlobal payments debited from an account with HSBC Premier\n• via HSBC Internet Banking/HSBC Mobile Banking\n- Renminbi telegraphic transfer to HSBC Group/branches in mainland China³\n- Renminbi telegraphic transfer to mainland China through cross-boundary Wealth Management Connect\n- Other Telegraphic Transfer\n- All others",
+          "Waived\nWaived\nHK$50\nWaived"
+        ],
+        ["• via HSBC branches (telegraphic transfer)", "HK$200"],
+        [
+          "• Local handling charge for telegraphic transfer to your self-named HSBC accounts in different countries, submitted via HSBC Internet Banking/HSBC Mobile Banking⁴",
+          "Waived"
+        ],
+        [
+          "• Handling charge⁵ to remitter raised by the overseas entities of the HSBC Group/overseas HSBC branches⁶",
+          "Waived"
+        ],
+        [
+          "2. Payment services\nInterbank fund transfers\nPayment through Real Time Gross Settlement (RTGS)⁷,⁸\nEach real time outward RTGS payment to the credit of an account held with other local banks\n• via HSBC Internet Banking/HSBC Mobile Banking\n• via HSBC Branches",
+          "Waived\nHK$160"
+        ],
+        [
+          "Each inward payment credited to an account with HSBC Premier",
+          "Waived"
+        ],
+        [
+          "2. Payment services\nPayment through Faster Payment System (FPS)⁹\nEach Hong Kong dollar/Renminbi outward payment to the credit of an account held with other Participants⁹\n• via HSBC Internet Banking\n• via HSBC Mobile Banking",
+          "Waived\nWaived"
+        ],
+        [
+          "Each inward payment from other Participants⁹ and credited to an account with HSBC Premier",
+          "Waived"
+        ],
+        [
+          "3. Credit card\nHSBC Premier Mastercard® Credit Card\n• Primary card annual fee\n• Additional card annual fee\n• Overlimit handling charge¹⁰",
+          "Waived\nWaived\nHK$90"
+        ],
+        [
+          "3. Credit card\nLost card - replacement fee\n• HSBC Premier Mastercard® Credit Card",
+          "Waived"
+        ],
+        [
+          "4. Loan services\nOverdraft\n• Unauthorised Overdraft interest rate¹¹,¹²\n• Unauthorised Overdraft handling charge¹¹,¹²\n• Overdraft Protection interest rate",
+          "HSBC Best Lending Rate +8% per annum\nHK$100\nHSBC Best Lending Rate +4% per annum"
+        ],
+        ["5. Mortgage services\nChange of Mortgage Plan", "Waived"]
+      ],
+      "md_table": "| Items | Special privileges |\n|---|---|\n| 1. Integrated account services<br>Below balance fee<sup>1</sup><br>(based on average Total Relationship Balance over the last three months<sup>2</sup>)<br>For HSBC Premier customer with a Total Relationship Balance of<br>• HK$1,000,000 and above<br>• Below HK$1,000,000 | Waived<br>HK$380 per month |\n| 2. Payment services<br>Remittances - Outward payment<br>Global payments debited from an account with HSBC Premier<br>• via HSBC Internet Banking/HSBC Mobile Banking<br>- Renminbi telegraphic transfer to HSBC Group/branches in mainland China<sup>3</sup><br>- Renminbi telegraphic transfer to mainland China through cross-boundary Wealth Management Connect<br>- Other Telegraphic Transfer<br>- All others | Waived<br>Waived<br>HK$50<br>Waived |\n| • via HSBC branches (telegraphic transfer) | HK$200 |\n| • Local handling charge for telegraphic transfer to your self-named HSBC accounts in different countries, submitted via HSBC Internet Banking/HSBC Mobile Banking<sup>4</sup> | Waived |\n| • Handling charge<sup>5</sup> to remitter raised by the overseas entities of the HSBC Group/overseas HSBC branches<sup>6</sup> | Waived |\n| 2. Payment services<br>Interbank fund transfers<br>Payment through Real Time Gross Settlement (RTGS)<sup>7,8</sup><br>Each real time outward RTGS payment to the credit of an account held with other local banks<br>• via HSBC Internet Banking/HSBC Mobile Banking<br>• via HSBC Branches | Waived<br>HK$160 |\n| Each inward payment credited to an account with HSBC Premier | Waived |\n| 2. Payment services<br>Payment through Faster Payment System (FPS)<sup>9</sup><br>Each Hong Kong dollar/Renminbi outward payment to the credit of an account held with other Participants<sup>9</sup><br>• via HSBC Internet Banking<br>• via HSBC Mobile Banking | Waived<br>Waived |\n| Each inward payment from other Participants<sup>9</sup> and credited to an account with HSBC Premier | Waived |\n| 3. Credit card<br>HSBC Premier Mastercard® Credit Card<br>• Primary card annual fee<br>• Additional card annual fee<br>• Overlimit handling charge<sup>10</sup> | Waived<br>Waived<br>HK$90 |\n| 3. Credit card<br>Lost card - replacement fee<br>• HSBC Premier Mastercard® Credit Card | Waived |\n| 4. Loan services<br>Overdraft<br>• Unauthorised Overdraft interest rate<sup>11,12</sup><br>• Unauthorised Overdraft handling charge<sup>11,12</sup><br>• Overdraft Protection interest rate | HSBC Best Lending Rate +8% per annum<br>HK$100<br>HSBC Best Lending Rate +4% per annum |\n| 5. Mortgage services<br>Change of Mortgage Plan | Waived |\n| ",
+      "label": "INCORRECT",
+      "error_reason": "ROW_MERGE_ERROR: The PDF shows '• via HSBC branches (telegraphic transfer) — HK$200' as a separate row item under 'Remittances - Outward payment', but the MD conversion merged this content into the parent row cell 'via HSBC Internet Banking/HSBC Mobile Banking' instead of creating a distinct row. The hierarchical relationship is lost and the HK$200 charge appears incorrectly attached to the parent item.",
+      "pdf_footnotes": {
+        "1": "The monthly below balance fee applies to each HSBC Premier held by the customer.",
+        "2": "The below balance fee is imposed based on your Total Relationship Balance (TRB) which comprises: Hong Kong dollar/renminbi/foreign currency deposits; Market value of investments (securities, unit trusts, bonds, etc.); Deposit amounts of Deposit Plus and Structured Investment Deposits; Utilised lending facilities (excluding mortgages and credit card balances); Life insurance with savings or investment component; HSBC MPF balances and HSBC ORSO Defined Contribution Scheme balances.",
+        "3": "Excluding Hang Seng Bank Limited and its subsidiaries.",
+        "4": "Applicable to telegraphic transfers to self-named HSBC accounts (including joint accounts with identical account holders). Local handling charge will be levied for telegraphic transfer made between joint accounts with any different name of account holders. Not applicable to telegraphic transfers set up via standing instructions.",
+        "5": "It refers to the flat fee of HK$150 covering the overseas HSBC banks/branches payment charges. If telegraphic transfer is made through HSBC Internet Banking or HSBC Mobile Banking, the overseas handling charge is HK$50.",
+        "6": "Other additional overseas charges (if applicable) will be borne by customers. For details, please refer to Section C2 – Payment Services – Remittances – Outward Payments.",
+        "7": "Funds transferred through RTGS will normally be credited to the beneficiary's account on the transfer date.",
+        "8": "Please note that some beneficiary banks may impose additional charges. At the beneficiary banks' discretion, the charge may be deducted from the payment amount.",
+        "9": "Participant means a participant of FPS which may be a bank or other financial institution, a retail payment system operator, a licensed stored value facility, or any other person accepted by Hong Kong Interbank Clearing Limited as a participant of FPS from time to time.",
+        "10": "If your statement balance exceeds the existing credit limit on your card, we will treat this as your informal request for raising your credit limit. We may agree to your request and charge, without prior notice, a handling fee for considering and agreeing to your request.",
+        "11": "Applicable to the HSBC Premier Integrated Account only. Other Integrated Accounts/normal accounts (including those held by an HSBC Premier customer) are not applicable.",
+        "12": "If you pay or withdraw from your account which would cause your account to go overdrawn or over an existing overdraft limit, we will treat this as your ad-hoc request for an unauthorised overdraft. We may agree to your request and charge a handling charge for the unauthorised overdraft on each occasion.",
+        "13": "Surcharges of overseas local bank may be levied (if applicable). For details, please call the HSBC Premier Hotline at 2233 3322.",
+        "14": "Please refer to Section G2 – ATM card/Other account cards for other applicable ATM withdrawal charges.",
+        "15": "The following group of customers will be exempted from the fee: aged below 18 or 65 and above, Senior Citizen Card holders, recipients of Government's Comprehensive Social Security Allowance, recipients of Government's Disability Allowance and the physically disabled or visually impaired."
+      }
+    },
+    {
+      "table_id": "T04",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 18,
+      "pdf_section": "G3. Mastercard Debit Card/Mastercard Supplementary Debit Card",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "Personal Integrated Account",
+          "HSBC One",
+          "HSBC Premier",
+          "HSBC Jade"
+        ],
+        ["Annual fee", "Waived", "Waived", "Waived", "Waived"],
+        [
+          "Overseas ATM cash withdrawal¹,²,³\nFrom the HSBC Group's ATM network outside of HK",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Overseas ATM cash withdrawal¹,²,³\nFrom non-HSBC Group's ATM network outside of HK (Mastercard/ Cirrus network)",
+          "HK$40 per transaction",
+          "HK$40 per transaction",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Local ATM cash withdrawal\nFrom the HSBC Group's ATM network in HK",
+          "No charge",
+          "No charge",
+          "No charge",
+          "No charge"
+        ],
+        [
+          "Local ATM cash withdrawal\nFrom non-HSBC Group's ATM network in HK (Mastercard/ Cirrus network)",
+          "HK$25 per transaction",
+          "HK$25 per transaction",
+          "HK$25 per transaction",
+          "Waived"
+        ],
+        [
+          "Foreign currency transaction fee⁴,⁵\nFor cash withdrawal transactions",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Foreign currency transaction fee⁴,⁵\nFor purchase or online transactions",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Card replacement fee",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)",
+          "Waived"
+        ]
+      ],
+      "md_table": "| Item | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |\n|---|---|---|---|---|\n| Annual fee | Waived | Waived | Waived | Waived |\n| Overseas ATM cash withdrawal<sup>1,2,3</sup><br>From the HSBC Group's ATM network outside of HK | Waived | Waived | Waived | Waived |\n| Overseas ATM cash withdrawal<sup>1,2,3</sup><br>From non-HSBC Group's ATM network outside of HK (Mastercard/ Cirrus network) | HK$40 per transaction | HK$40 per transaction | Waived | Waived |\n| Local ATM cash withdrawal<br>From the HSBC Group's ATM network in HK | No charge | No charge | No charge | No charge |\n| Local ATM cash withdrawal<br>From non-HSBC Group's ATM network in HK (Mastercard/ Cirrus network) | HK$25 per transaction | HK$25 per transaction | HK$25 per transaction | Waived |\n| Foreign currency transaction fee<sup>4,5</sup><br>For cash withdrawal transactions | Waived | Waived | Waived | Waived |\n| Foreign currency transaction fee<sup>4,5</sup><br>For purchase or online transactions | Waived | Waived | Waived | Waived |\n| Card replacement fee | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) | Waived |",
+      "label": "INCORRECT",
+      "error_reason": "FOOTNOTE_SUPERSCRIPT_PRECEDENCE_ERROR: In the PDF, footnote superscripts for 'Overseas ATM cash withdrawal' rows (¹,²,³) appear in a specific order based on when they first apply. However, the MD conversion reorders the superscripts to '<sup>1,2,3</sup>' for ALL rows with these footnotes, losing the original precedence order. Additionally, 'Foreign currency transaction fee' footnote superscripts are reordered from their original PDF sequence to '<sup>4,5</sup>' — the MD consistently places the lower numbers first, but the PDF had a different reading order that should be preserved.",
+      "pdf_footnotes": {
+        "1": "For HSBC Premier/ HSBC One/ Personal Integrated Account clients, surcharges of overseas banks may be levied (if applicable). For HSBC Jade clients, the surcharges of overseas banks will be refunded if levied.",
+        "2": "Please note that any withdrawal of one of the 12 supported currencies through overseas ATMs will be debited from your respective foreign currency account, if you have sufficient foreign currency. If you do not have sufficient foreign currency to complete the withdrawal, we will convert the entire foreign currency transaction amount into Hong Kong dollars for debiting from your Hong Kong dollar accounts according to our prevailing exchange rates.",
+        "3": "If you withdraw in a currency other than the 12 supported ones, we will convert the entire foreign currency transaction amount into Hong Kong dollars for debiting from your Hong Kong dollar accounts according to a rate determined by us with reference to the exchange rate adopted by Mastercard on the date of conversion.",
+        "4": "Note: The supported currencies of HSBC Mastercard Debit card are AUD, CAD, CHF, EUR, GBP, HKD, JPY, NZD, RMB, SGD, THB and USD.",
+        "5": "Foreign currency transaction fee is incurred when a transaction is effected in currencies other than Hong Kong dollars. This fee is waived for HSBC Mastercard Debit Card.",
+        "6": "Customers may sometimes be offered the option to settle foreign currency transactions in Hong Kong Dollar at the point of sale/ ATM overseas (if applicable). Such option is a direct arrangement offered by the overseas merchants/ ATM operators and not the card issuer. In such cases, customers are reminded to find out from the merchants/ ATM operators about the foreign currency exchange rates and the percentage of handling fees to be applied before entering into the transactions since settling foreign currency transactions in Hong Kong Dollar may involve a higher cost than settling in foreign currency."
+      }
+    },
+       {
+      "table_id": "T05",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 16,
+      "pdf_section": "G1. Personal credit cards",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "HSBC Premier Mastercard® Credit Card",
+          "HSBC Advance Visa Platinum Card",
+          "HSBC Red Credit Card",
+          "HSBC Visa Signature Card",
+          "HSBC EveryMile Credit Card",
+          "Platinum Card (incl. green credit card)",
+          "Visa Gold, Gold Mastercard",
+          "Visa, Mastercard",
+          "iCAN Card",
+          "US dollar Visa Gold",
+          "HSBC Pulse UnionPay Dual Currency Diamond Card",
+          "UnionPay Dual Currency Card"
+        ],
+        [
+          "Annual fee\nPrimary card",
+          "waived permanently",
+          "waived permanently",
+          "waived permanently",
+          "HK$2,000",
+          "HK$2,000",
+          "HK$1,800",
+          "HK$600",
+          "HK$300",
+          "HK$300",
+          "US$80",
+          "HK$1,800",
+          "HK$300"
+        ],
+        [
+          "Annual fee\nAdditional card (separate billing)",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "HK$600",
+          "HK$300",
+          "N/A",
+          "US$80",
+          "N/A",
+          "N/A"
+        ],
+        [
+          "Annual fee\nAdditional card (combined billing)",
+          "waived permanently",
+          "waived permanently",
+          "waived permanently",
+          "HK$1,000",
+          "N/A",
+          "HK$900",
+          "HK$300",
+          "HK$150",
+          "N/A",
+          "US$40",
+          "HK$900",
+          "HK$150"
+        ],
+        [
+          "Card replacement fee\nCard replacement before renewal",
+          "waived",
+          "HK$100",
+          "HK$100",
+          "HK$100",
+          "HK$100",
+          "HK$100",
+          "HK$100",
+          "HK$100",
+          "HK$100",
+          "US$13",
+          "HK$100",
+          "HK$100"
+        ],
+        [
+          "Card replacement fee\nVirtual card account",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "N/A",
+          "HK$100",
+          "N/A",
+          "N/A",
+          "N/A"
+        ],
+        [
+          "Cash advance fee\nFrom ATM (per transaction)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100)",
+          "Handling fee of 1% on the cash advance amount (minimum US$7)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100 for HKD sub-account/ minimum RMB100 for RMB sub-account)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$100 for HKD sub-account/ minimum RMB100 for RMB sub-account)"
+        ],
+        [
+          "Cash advance fee\nOver-the-counter advances (per transaction)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum HK$120)",
+          "Handling fee of 1% on the cash advance amount (minimum US$10)",
+          "N/A",
+          "N/A"
+        ],
+        [
+          "Minimum payment due",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher",
+          "Equivalent to the full amount of the statement balance",
+          "Equivalent to the full amount of the statement balance",
+          "Total fees and charges currently billed to each sub-account statement plus 1% of the statement balance (excluding any fees and charges currently billed) of each sub-account as at the statement date (minimum HK$300 for HKD sub-account/ RMB300 for RMB sub-account), plus the overdue or overlimit due of each sub-account whichever is higher",
+          "Total fees and charges currently billed to each sub-account statement plus 1% of the statement balance (excluding any fees and charges currently billed) of each sub-account as at the statement date (minimum HK$300 for HKD sub-account/ RMB300 for RMB sub-account), plus the overdue or overlimit due of each sub-account whichever is higher"
+        ],
+        [
+          "Duplicate statement\nEach statement",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "US$4",
+          "HK$30",
+          "HK$30"
+        ],
+        [
+          "Late charge",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "The amount of minimum payment due or HK$300, whichever is the lower",
+          "N/A",
+          "N/A",
+          "For HKD sub-account: The amount of minimum payment due or HK$300, whichever is the lower\nFor RMB sub-account: The amount of minimum payment due or RMB300, whichever is the lower",
+          "For HKD sub-account: The amount of minimum payment due or HK$300, whichever is the lower\nFor RMB sub-account: The amount of minimum payment due or RMB300, whichever is the lower"
+        ]
+      ],
+      "md_table": "| Item | **HSBC Premier Mastercard® Credit Card** | **HSBC Advance Visa Platinum Card** | **HSBC Red Credit Card** | **HSBC Visa Signature Card** | **HSBC EveryMile Credit Card** | **Platinum Card (incl. green credit card)** | **Visa Gold, Gold Mastercard** | **Visa, Mastercard** | **iCAN Card** | **US dollar Visa Gold** | **HSBC Pulse UnionPay Dual Currency Diamond Card** | **UnionPay Dual Currency Card** |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| Annual fee<br>Primary card | waived permanently | waived permanently | waived permanently | HK$2,000 | HK$2,000 | HK$1,800 | HK$600 | HK$300 | HK$300 | US$80 | HK$1,800 | HK$300 |\n| Annual fee<br>Additional card (separate billing) | N/A | N/A | N/A | N/A | N/A | N/A | HK$600 | HK$300 | N/A | US$80 | N/A | N/A |\n| Annual fee<br>Additional card (combined billing) | waived permanently | waived permanently | waived permanently | HK$1,000 | N/A | HK$900 | HK$300 | HK$150 | N/A | US$40 | HK$900 | HK$150 |\n| Card replacement fee<br>Card replacement before renewal | waived | HK$100 | HK$100 | HK$100 | HK$100 | HK$100 | HK$100 | HK$100 | HK$100 | US$13 | HK$100 | HK$100 |\n| Card replacement fee<br>Virtual card account | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | HK$100 | N/A | N/A | N/A |\n| Cash advance fee<br>From ATM (per transaction) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum HK$100) | Handling fee of 1% on the cash advance amount (minimum US$7) | Handling fee of 1% on the cash advance amount (minimum HK$100 for HKD sub-account/ minimum RMB100 for RMB sub-account) | Handling fee of 1% on the cash advance amount (minimum HK$100 for HKD sub-account/ minimum RMB100 for RMB sub-account) |\n| Cash advance fee<br>Over-the-counter advances (per transaction) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum HK$120) | Handling fee of 1% on the cash advance amount (minimum US$10) | N/A | N/A |\n| Minimum payment due | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Total fees and charges currently billed to the card statement plus 1% of the statement balance (excluding any fees and charges currently billed) as at the statement date (minimum HK$300), plus overdue or overlimit due whichever is higher | Equivalent to the full amount of the statement balance | Equivalent to the full amount of the statement balance | Total fees and charges currently billed to each sub-account statement plus 1% of the statement balance (excluding any fees and charges currently billed) of each sub-account as at the statement date (minimum HK$300 for HKD sub-account/ RMB300 for RMB sub-account), plus the overdue or overlimit due of each sub-account whichever is higher | Total fees and charges currently billed to each sub-account statement plus 1% of the statement balance (excluding any fees and charges currently billed) of each sub-account as at the statement date (minimum HK$300 for HKD sub-account/ RMB300 for RMB sub-account), plus the overdue or overlimit due of each sub-account whichever is higher |\n| Duplicate statement<br>Each statement | HK$30 | HK$30 | HK$30 | HK$30 | HK$30 | HK$30 | HK$30 | HK$30 | HK$30 | US$4 | HK$30 | HK$30 |\n| Late charge | The amount of minimum payment due or HK$300, whichever is the lower | The amount of minimum payment due or HK$300, whichever is the lower | The amount of minimum payment due or HK$300, whichever is the lower | The amount of minimum payment due or HK$300, whichever is the lower | The amount of minimum payment due or HK$300, whichever is the lower | The amount of minimum payment due or HK$300, whichever is the lower | The amount of minimum payment due or HK$300, whichever is the lower | The amount of minimum payment due or HK$300, whichever is the lower | N/A | N/A | For HKD sub-account: The amount of minimum payment due or HK$300, whichever is the lower<br>For RMB sub-account: The amount of minimum payment due or RMB300, whichever is the lower | For HKD sub-account: The amount of minimum payment due or HK$300, whichever is the lower<br>For RMB sub-account: The amount of minimum payment due or RMB300, whichever is the lower |",
+      "label": "INCORRECT",
+      "error_reason": "CELL_CONTENT_INCONSISTENCY: The 'Minimum payment due' row shows inconsistent content between columns. Most cards show 'Total fees and charges currently billed to the card statement plus 1% of the statement balance...' while iCAN Card and US dollar Visa Gold show 'Equivalent to the full amount of the statement balance'. The 'Late charge' row similarly shows N/A for iCAN Card and US dollar Visa Gold instead of the standard formula.",
+      "pdf_footnotes": {
+        "1": "This charge also applies to non-HSBC customers.",
+        "2": "The APR is calculated based on a set of assumptions as set out in the relevant guidelines as referred to in the Code of Banking Practice and the actual APR applied to your card account may be different. US dollar Visa Gold Card requires payment of the statement balance in full and the APR (calculated by assuming only 1% of the current balance plus the total fees and charges currently billed to the card statement are settled each month) is for reference only.",
+        "3": "If you fail to make the minimum payment in full before the due date, we may charge, without prior notice, a late charge in addition to finance charge.",
+        "4": "If your statement balance (excluding all fees and charges currently billed to your card account) exceeds the existing credit limit on your card, we will treat this as your informal request for raising your credit limit. We may agree to your request and charge, without prior notice, a handling fee for considering and agreeing to your request.",
+        "5": "If you present a cheque drawn on, or make an autoPay payment from, banks other than HSBC for the purpose of credit card repayment, and the cheque or payment is subsequently returned or rejected, we will treat this as your informal request for special handling services and may charge, without prior notice, a handling fee for such service.",
+        "6": "Effective 1 January 2023, this standard charge applies to Personal Banking HK Dollar Current, SuperEase, HSBC Jade, HSBC Premier, HSBC One, Personal Integrated Account, University Student Account, Cash Card, Renminbi Savings, HK Dollar Statement Savings, CombiNations Statement Savings, Foreign Currency Current or any Credit Card account if account holders receive any paper statement in a full calendar year. The following group of customers will be exempt from the annual fee: aged below 18 or 65 and above, recipients of Government's Comprehensive Social Security Allowance, recipients of Government's Disability Allowance and the physically disabled or visually impaired.",
+        "7": "Accrual of interest on a cash advance transaction will continue after the statement cut-off date and the accrued interest will only be charged and shown in the next statement. If you wish to fully settle the interest, you may contact us to ascertain the amount of accrued interest payable following the current statement cut-off date."
+      }
+    },
+    {
+      "table_id": "T06",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 17,
+      "pdf_section": "G2. ATM card/Other account cards",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "Personal Customer",
+          "Personal Integrated Account",
+          "HSBC One",
+          "HSBC Premier",
+          "HSBC Jade"
+        ],
+        [
+          "Annual fee",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Overseas ATM cash withdrawal\nFrom the HSBC Group's ATM network outside of HK",
+          "HK$20 per transaction",
+          "HK$20 per transaction",
+          "HK$20 per transaction",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Overseas ATM cash withdrawal\nFor overseas networks/sites (BancNet in the Philippines)",
+          "HK$20 per transaction",
+          "HK$20 per transaction",
+          "HK$20 per transaction",
+          "HK$20 per transaction",
+          "HK$20 per transaction"
+        ],
+        [
+          "Overseas ATM cash withdrawal\nFrom Visa/Plus network",
+          "HK$40 per transaction (including for secondary account(s) using a Visa card)",
+          "HK$40 per transaction (including for secondary account(s) using a Visa card)",
+          "HK$40 per transaction (including for secondary account(s) using a Visa card)",
+          "HK$40 per transaction (including for secondary account(s) using a Visa card)",
+          "HK$40 per transaction (including for secondary account(s) using a Visa card)"
+        ],
+        [
+          "Overseas ATM cash withdrawal\nFrom Mastercard/Cirrus network",
+          "HK$40 per transaction (including for secondary account(s) using a Mastercard card)",
+          "HK$40 per transaction (including for secondary account(s) using a Mastercard card)",
+          "HK$40 per transaction (including for secondary account(s) using a Mastercard card)",
+          "HK$40 per transaction (including for secondary account(s) using a Mastercard card)",
+          "HK$40 per transaction (including for secondary account(s) using a Mastercard card)"
+        ],
+        [
+          "Overseas ATM cash withdrawal\nFrom UnionPay network",
+          "HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)"
+        ],
+        [
+          "Local ATM cash withdrawal\nFrom HSBC Group's ATM network in HK",
+          "No charge",
+          "No charge",
+          "No charge",
+          "No charge",
+          "No charge"
+        ],
+        [
+          "Local ATM cash withdrawal\nFrom non-HSBC Group's ATM network in HK (Visa/Plus or Mastercard/Cirrus network)",
+          "HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card)",
+          "HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card)",
+          "HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card)",
+          "HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card)",
+          "HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card)"
+        ],
+        [
+          "Local ATM cash withdrawal\nFrom non-HSBC Group's ATM network in HK (UnionPay network)",
+          "HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)",
+          "HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app)"
+        ],
+        [
+          "Card replacement fee (excluding credit cards)",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)",
+          "HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years)"
+        ]
+      ],
+      "md_table": "| Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |\n|---|---|---|---|---|---|\n| Annual fee | Waived | Waived | Waived | Waived | Waived |\n| Overseas ATM cash withdrawal<br>From the HSBC Group's ATM network outside of HK | HK$20 per transaction | HK$20 per transaction | HK$20 per transaction | Waived | Waived |\n| Overseas ATM cash withdrawal<br>For overseas networks/sites (BancNet in the Philippines) | HK$20 per transaction | HK$20 per transaction | HK$20 per transaction | HK$20 per transaction | HK$20 per transaction |\n| Overseas ATM cash withdrawal<br>From Visa/Plus network | HK$40 per transaction (including for secondary account(s) using a Visa card) | HK$40 per transaction (including for secondary account(s) using a Visa card) | HK$40 per transaction (including for secondary account(s) using a Visa card) | HK$40 per transaction (including for secondary account(s) using a Visa card) | HK$40 per transaction (including for secondary account(s) using a Visa card) |\n| Overseas ATM cash withdrawal<br>From Mastercard/Cirrus network | HK$40 per transaction (including for secondary account(s) using a Mastercard card) | HK$40 per transaction (including for secondary account(s) using a Mastercard card) | HK$40 per transaction (including for secondary account(s) using a Mastercard card) | HK$40 per transaction (including for secondary account(s) using a Mastercard card) | HK$40 per transaction (including for secondary account(s) using a Mastercard card) |\n| Overseas ATM cash withdrawal<br>From UnionPay network | HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$50 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) |\n| Local ATM cash withdrawal<br>From HSBC Group's ATM network in HK | No charge | No charge | No charge | No charge | No charge |\n| Local ATM cash withdrawal<br>From non-HSBC Group's ATM network in HK (Visa/Plus or Mastercard/Cirrus network) | HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card) | HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card) | HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card) | HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card) | HK$25 per transaction (including for secondary account(s) using a Visa or Mastercard card) |\n| Local ATM cash withdrawal<br>From non-HSBC Group's ATM network in HK (UnionPay network) | HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) | HK$15 per transaction (including for secondary account(s) using a UnionPay card or \"Mobile Cash Withdrawal\" on the HSBC HK Mobile Banking app) |\n| Card replacement fee (excluding credit cards) | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) | HK$50 (for replacement of a lost or damaged card that has been held by the customer for more than three months but less than two years) |",
+      "label": "INCORRECT",
+      "error_reason": "FOOTNOTE_EXPANSION_MISMATCH: The MD table uses footnotes on 'Overseas ATM cash withdrawal' rows, but the PDF has only 2 main footnotes while the footnote block below the table expands to 11 footnotes including detailed explanations of Visa/Plus, Mastercard/Cirrus, UnionPay, HSBC overseas ATM, and other network-specific charges.",
+      "pdf_footnotes": {
+        "1": "Surcharges of overseas bank may be levied (if applicable).",
+        "2": "Please note that any withdrawal of foreign currency through overseas ATMs will not be debited from your foreign currency account (if any), but from your Hong Kong dollar account instead. Different exchange rate, and fees and charges will apply depending on the overseas ATM network that you are using.",
+        "3": "Withdrawal via Visa / PLUS ATM network - the amount of foreign currency withdrawn from the overseas ATM will be converted to Hong Kong dollar (HKD) equivalent using an exchange rate set by Visa on the transaction date; a conversion charge of 1.0% (for PLUS ATM card) / 1.95% (via Visa credit card which is linked to banking account) is applied by HSBC on such HKD amount.",
+        "4": "Withdrawal via Mastercard / Cirrus network - the amount of foreign currency withdrawn from the overseas ATM is first converted into US dollar (USD) equivalent using an exchange rate set by Mastercard on the transaction date, and such USD amount is then converted to Hong Kong dollar equivalent using an exchange rate set by HSBC for the day of transaction; a conversion charge of 1.95% is applied by HSBC on the HKD amount.",
+        "5": "Withdrawal via UnionPay network - the amount of foreign currency withdrawn is converted directly into HKD equivalent using an exchange rate set by UnionPay on the transaction date without conversion charges.",
+        "6": "Withdrawal via HSBC overseas ATM in designated locations - the amount of foreign currency withdrawn is converted directly into HKD equivalent using an exchange rate set by HSBC for the day of transaction; a conversion charge of 1% is applied by HSBC on such HKD amount.",
+        "7": "The reference rates displayed at the websites of respective network providers/HSBC may not precisely reflect the actual rates applied to the withdrawn amounts due to the time at which the rates are used, possible rounding differences and the exclusion of the conversion charge (if any).",
+        "8": "For cards linked to more than one banking accounts, please note that some overseas ATMs do not allow a customer to select an account for the withdrawal.",
+        "9": "Applicable to HSBC Group's ATMs in the following locations: Australia, Bahrain, Bangladesh, Bermuda, Canada, Mainland China, Egypt, India, Indonesia, Macau, Malaysia, Malta, Mauritius, Oman, Philippines, Qatar, Saudi Arabia, Singapore, Sri Lanka, Taiwan, UAE, UK, USA, Vietnam.",
+        "10": "The above list is subject to change from time to time without prior notice.",
+        "11": "Customers may sometimes be offered the option to settle foreign currency transactions in Hong Kong Dollar at the point of sale/ ATM overseas. Such option is a direct arrangement offered by the overseas merchants/ ATM operators and not the card issuer."
+      }
+    },
+    {
+      "table_id": "T07",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 15,
+      "pdf_section": "F. Loan Services",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "HSBC One and Personal Integrated Account — Clean Credit",
+          "HSBC One and Personal Integrated Account — Secured Credit",
+          "HSBC Premier and HSBC Jade — Clean Credit",
+          "HSBC Premier and HSBC Jade — Secured Credit"
+        ],
+        [
+          "Service Fee",
+          "Annual Fee: 1% of the overdraft limit (Minimum: HK$200, Maximum: HK$700)",
+          "Monthly Fee: pro-rated on HK$50 based on utilisation % of the credit limit in the previous month, maximum HK$50",
+          "Not applicable",
+          "Monthly Fee: pro-rated on HK$50 based on utilisation % of the credit limit in the previous month, maximum HK$50"
+        ],
+        [
+          "Late Payment Charge (Minimum Payment)",
+          "Not applicable",
+          "HK$80",
+          "Not applicable",
+          "Not applicable"
+        ],
+        [
+          "Unauthorised Overdraft Interest Rate",
+          "HSBC Best Lending Rate +8%",
+          "HSBC Best Lending Rate +8%",
+          "HSBC Best Lending Rate +8%",
+          "HSBC Best Lending Rate +8%"
+        ],
+        [
+          "Unauthorised Overdraft Handling Charge",
+          "HK$120",
+          "HK$120",
+          "HK$100",
+          "HK$100"
+        ],
+        [
+          "Overdraft Protection Interest Rate",
+          "Not applicable",
+          "HSBC Best Lending Rate +5%",
+          "HSBC Best Lending Rate +4%",
+          "HSBC Best Lending Rate +4%"
+        ]
+      ],
+      "md_table": "| Item | **HSBC One and Personal Integrated Account — Clean Credit** | **HSBC One and Personal Integrated Account — Secured Credit** | **HSBC Premier and HSBC Jade — Clean Credit** | **HSBC Premier and HSBC Jade — Secured Credit** |\n|---|---|---|---|---|\n| Service Fee | Annual Fee: 1% of the overdraft limit (Minimum: HK$200, Maximum: HK$700) | Monthly Fee: pro-rated on HK$50 based on utilisation % of the credit limit in the previous month, maximum HK$50 | Not applicable | Monthly Fee: pro-rated on HK$50 based on utilisation % of the credit limit in the previous month, maximum HK$50 |\n| Late Payment Charge (Minimum Payment) | Not applicable | HK$80 | Not applicable | Not applicable |\n| Unauthorised Overdraft Interest Rate | HSBC Best Lending Rate +8% | HSBC Best Lending Rate +8% | HSBC Best Lending Rate +8% | HSBC Best Lending Rate +8% |\n| Unauthorised Overdraft Handling Charge | HK$120 | HK$120 | HK$100 | HK$100 |\n| Overdraft Protection Interest Rate | Not applicable | HSBC Best Lending Rate +5% | HSBC Best Lending Rate +4% | HSBC Best Lending Rate +4% |",
+      "label": "INCORRECT",
+      "error_reason": "COLUMN_STRUCTURE_ERROR: The PDF contains multiple loan-related tables (Personal Instalment Loan, Revolving Credit Facility, Overdraft) but the markdown only includes the Overdraft table. The 'Personal Overdraft' column header that appears in the PDF is not shown in the markdown, causing a structural mismatch where the markdown incorrectly merges HSBC One and Personal Integrated Account under a single 'Clean Credit' category.",
+      "pdf_footnotes": {
+        "1": "If you fail to make payment in full when due (including where there are insufficient funds in the repayment account), we may charge, without prior notice, a late charge in addition to interest on the overdue amount."
+      }
+    },
+    {
+      "table_id": "T08",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 13,
+      "pdf_section": "D. Mortgage services",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "Personal Customer",
+          "Personal Integrated Account",
+          "HSBC One",
+          "HSBC Premier",
+          "HSBC Jade"
+        ],
+        [
+          "Cancellation fee\nEach application",
+          "0.15% of the loan amount subject to a minimum of HK$5,000",
+          "0.15% of the loan amount subject to a minimum of HK$5,000",
+          "0.15% of the loan amount subject to a minimum of HK$5,000",
+          "0.15% of the loan amount subject to a minimum of HK$5,000",
+          "0.15% of the loan amount subject to a minimum of HK$5,000"
+        ],
+        [
+          "Change of Mortgage Plan",
+          "HK$1,500 per request",
+          "HK$1,500 per request",
+          "HK$1,500 per request",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Change of repayment plan\nGeneral change, e.g. instalment amount, loan tenure, repayment option/frequency",
+          "HK$1,000",
+          "HK$1,000",
+          "HK$1,000",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Change of Guarantor / Mortgage Deed",
+          "HK$1,000 per request",
+          "HK$1,000 per request",
+          "HK$1,000 per request",
+          "HK$1,000 per request",
+          "Waived"
+        ],
+        [
+          "Request for each extra copy of documents\n• Statement / confirmation letter",
+          "HK$100",
+          "HK$50",
+          "HK$50",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Request for each extra copy of documents\n• Repayment schedule / rate change advice / facility letter",
+          "HK$100",
+          "HK$50",
+          "HK$50",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Request for each extra copy of documents\n• Mortgage/Deed of Assignment/Sale and Purchase Agreement/ Deed of Mutual Covenant",
+          "HK$200 per set",
+          "HK$100 per set",
+          "HK$100 per set",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Request for each extra copy of documents\n• Confirmation of outstanding balance",
+          "HK$150",
+          "HK$75",
+          "HK$75",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Request for each extra copy of documents\n• Annual interest statement",
+          "HK$100",
+          "HK$50",
+          "HK$50",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Lease consent letter on charged property",
+          "HK$1,000 per letter",
+          "HK$1,000 per letter",
+          "HK$1,000 per letter",
+          "HK$1,000 per letter",
+          "Waived"
+        ],
+        [
+          "Custody of non-discharged deeds after full loan repayment",
+          "HK$4,000 per year",
+          "HK$4,000 per year",
+          "HK$4,000 per year",
+          "HK$4,000 per year",
+          "HK$4,000 per year"
+        ],
+        [
+          "Issuance of redemption statement for existing account",
+          "HK$200 per copy",
+          "HK$200 per copy",
+          "HK$200 per copy",
+          "HK$200 per copy",
+          "Waived"
+        ],
+        [
+          "Late charge",
+          "HK$380",
+          "HK$380",
+          "HK$380",
+          "HK$380",
+          "HK$380"
+        ],
+        [
+          "General prepayment charge\nFull prepayment charge\n• If within 1st year of drawdown\n• If within 2nd year of drawdown\n• If within 3rd year of drawdown",
+          "3% of the original loan amount\n2% of the original loan amount\n1% of the original loan amount",
+          "3% of the original loan amount\n2% of the original loan amount\n1% of the original loan amount",
+          "3% of the original loan amount\n2% of the original loan amount\n1% of the original loan amount",
+          "3% of the original loan amount\n2% of the original loan amount\n1% of the original loan amount",
+          "3% of the original loan amount\n2% of the original loan amount\n1% of the original loan amount"
+        ],
+        [
+          "General prepayment charge\nPartial prepayment charge\n• Within first 2 years from drawdown",
+          "2 months' interest on partial prepaid amount (minimum HK$50,000)",
+          "2 months' interest on partial prepaid amount (minimum HK$50,000)",
+          "2 months' interest on partial prepaid amount (minimum HK$50,000)",
+          "2 months' interest on partial prepaid amount (minimum HK$50,000)",
+          "2 months' interest on partial prepaid amount (minimum HK$50,000)"
+        ]
+      ],
+      "md_table": "| Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |\n|---|---|---|---|---|---|\n| Cancellation fee<br>Each application | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 |\n| Change of Mortgage Plan | HK$1,500 per request | HK$1,500 per request | HK$1,500 per request | Waived | Waived |\n| Change of repayment plan<br>General change, e.g. instalment amount, loan tenure, repayment option/frequency | HK$1,000 | HK$1,000 | HK$1,000 | Waived | Waived |\n| Change of Guarantor / Mortgage Deed | HK$1,000 per request | HK$1,000 per request | HK$1,000 per request | HK$1,000 per request | Waived |\n| Request for each extra copy of documents<br>• Statement / confirmation letter | HK$100 | HK$50 | Waived | Waived | Waived |\n| Request for each extra copy of documents<br>• Repayment schedule / rate change advice / facility letter | HK$100 | HK$50 | Waived | Waived | Waived |\n| Request for each extra copy of documents<br>• Mortgage/Deed of Assignment/Sale and Purchase Agreement/ Deed of Mutual Covenant | HK$200 per set | HK$100 per set | Waived | Waived | Waived |\n| Request for each extra copy of documents<br>• Confirmation of outstanding balance | HK$150 | HK$75 | Waived | Waived | Waived |\n| Request for each extra copy of documents<br>• Annual interest statement | HK$100 | HK$50 | Waived | Waived | Waived |\n| Lease consent letter on charged property | HK$1,000 per letter | HK$1,000 per letter | HK$1,000 per letter | HK$1,000 per letter | Waived |\n| Custody of non-discharged deeds after full loan repayment | HK$4,000 per year | HK$4,000 per year | HK$4,000 per year | HK$4,000 per year | HK$4,000 per year |\n| Issuance of redemption statement for existing account | HK$200 per copy | HK$200 per copy | HK$200 per copy | HK$200 per copy | Waived |\n| Late charge | HK$380 | HK$380 | HK$380 | HK$380 | HK$380 |\n| General prepayment charge<br>Full prepayment charge<br>• If within 1st year of drawdown<br>• If within 2nd year of drawdown<br>• If within 3rd year of drawdown | 3% of the original loan amount<br>2% of the original loan amount<br>1% of the original loan amount | 3% of the original loan amount<br>2% of the original loan amount<br>1% of the original loan amount | 3% of the original loan amount<br>2% of the original loan amount<br>1% of the original loan amount | 3% of the original loan amount<br>2% of the original loan amount<br>1% of the original loan amount | 3% of the original loan amount<br>2% of the original loan amount<br>1% of the original loan amount |\n| General prepayment charge<br>Partial prepayment charge<br>• Within first 2 years from drawdown | 2 months' interest on partial prepaid amount (minimum HK$50,000) | 2 months' interest on partial prepaid amount (minimum HK$50,000) | 2 months' interest on partial prepaid amount (minimum HK$50,000) | 2 months' interest on partial prepaid amount (minimum HK$50,000) | 2 months' interest on partial prepaid amount (minimum HK$50,000) |",
+      "label": "INCORRECT",
+      "error_reason": "CELL_CONTENT_INCONSISTENCY: For 'Request for each extra copy of documents' rows, the PDF shows different fees for HSBC One (HK$50) and Personal Integrated Account (HK$50), but the markdown incorrectly shows HSBC One as 'Waived' for all document types while Personal Integrated Account shows HK$50. The markdown misplaces HSBC One values into the wrong columns.",
+      "pdf_footnotes": {
+        "1": "Cancellation fee is only applicable for applications received on or after 1 August 2015. For applications received before 1 August 2015, application fee charging at 0.15% of the loan amount upon after acceptance will apply instead. For applications received on or after 1 November 2017, the cancellation fee will be subject to a minimum of HK$5,000. Effective 1 Nov 2023 Government Housing Scheme applications are also subject to cancellation fee.",
+        "2": "If you fail to make payment in full when due (including where there are insufficient funds in the repayment account), we may charge, without prior notice, a late charge in addition to interest on the overdue repayment(s).",
+        "3": "These charges are subject to approval by the Bank. If your mortgage loan facility letter sets out a different amount of prepayment charges from above, your facility letter shall prevail. You may also be required to return the whole or part of any cash incentives you received from the Bank.",
+        "4": "Government Housing Scheme covers Home Ownership Scheme / Private Sector Participation Scheme / Tenants Purchase Scheme / Home Purchase Loan Scheme / Home Assistance Loan Scheme."
+      }
+    },
+    {
+      "table_id": "T09",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 10,
+      "pdf_section": "C1. Payment services – autoPay services",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "Personal Customer",
+          "Personal Integrated Account",
+          "HSBC One",
+          "HSBC Premier",
+          "HSBC Jade"
+        ],
+        [
+          "To set up or amend each autoPay instruction\n• Via paper form",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30",
+          "HK$30"
+        ],
+        [
+          "To set up or amend each autoPay instruction\n• Via HSBC Mobile Banking",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived",
+          "Waived"
+        ],
+        [
+          "Each autoPay instruction returned as a result of insufficient funds",
+          "HK$150",
+          "HK$150",
+          "HK$150",
+          "HK$150",
+          "HK$150"
+        ]
+      ],
+      "md_table": "| Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |\n|---|---|---|---|---|---|\n| To set up or amend each autoPay instruction<br>• Via paper form | HK$30 | HK$30 | HK$30 | HK$30 | HK$30 |\n| To set up or amend each autoPay instruction<br>• Via HSBC Mobile Banking | Waived | Waived | Waived | Waived | Waived |\n| Each autoPay instruction returned as a result of insufficient funds | HK$150 | HK$150 | HK$150 | HK$150 | HK$150 |",
+      "label": "CORRECT",
+      "error_reason": "",
+      "pdf_footnotes": {
+        "1": "autoPay instruction is also named as direct debit authorisation. autoPay instruction and direct debit authorisation are used interchangeably in customer communication including account statement, bank forms/advices, internet banking platform etc.",
+        "2": "Not applicable to the autoPay instruction setup / amendment when the beneficiary is HSBC.",
+        "3": "If you instruct us to make a payment from your account by autoPay, which if executed by us, would either cause your account to go overdrawn or over an existing overdraft limit, we will treat this as your ad-hoc request for an unauthorised overdraft. We may agree to your request and provide you with an overdraft. The amount of the unauthorised overdraft will be subject to our prevailing interest rate calculated on a daily basis. We will also charge a handling charge for the unauthorised overdraft on each occasion. Alternatively, we may refuse your request and your instruction, and impose a handling charge for considering and refusing your request on each occasion. This item is not applicable to real-time top-up to electronic wallet of licensed stored value facility.",
+        "9": "Waived for senior citizens aged 65 and above / Senior Citizen Card holders."
+      }
+    },
+    {
+      "table_id": "T10",
+      "source_pdf": "hsbc.pdf",
+      "pdf_page": 11,
+      "pdf_section": "C3. Global Transfers",
+      "pdf_table_index": 1,
+      "pdf_table_cells": [
+        [
+          "Item",
+          "Personal Customer",
+          "Personal Integrated Account",
+          "HSBC One",
+          "HSBC Premier",
+          "HSBC Jade"
+        ],
+        [
+          "Global Transfers\nEach Transfer",
+          "N/A",
+          "N/A",
+          "Waived",
+          "Waived",
+          "Waived"
+        ]
+      ],
+      "md_table": "| Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |\n|---|---|---|---|---|---|\n| Global Transfers<br>Each Transfer | N/A | Waived | Waived | Waived | Waived |",
+      "label": "INCORRECT",
+      "error_reason": "CELL_CONTENT_INCONSISTENCY: For the 'Global Transfers' row, the PDF shows 'N/A' for Personal Customer and Personal Integrated Account columns, but the markdown incorrectly shows 'Waived' for Personal Integrated Account instead of 'N/A'. This represents a data error in the markdown conversion where N/A values are incorrectly converted to Waived.",
+      "pdf_footnotes": {
+        "1": "HSBC Global Transfers provide instant international fund transfer between your HSBC account and other HSBC accounts abroad. Please refer to HSBC website for the list of supported receiving countries."
+      }
+    }
+  ]
+}
