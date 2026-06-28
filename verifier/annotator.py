@@ -280,7 +280,14 @@ class MarkdownAnnotator:
         # Update annotated_md_table in verifications with the new text
         # (This is a bit redundant since we already replaced inline)
         for i, v in enumerate(self._verifications):
-            v.annotated_md_table = f"<!-- VERIFY: {v.verdict.label} | {' | '.join(f'reason={r}' for r in v.verdict.all_errors) if v.verdict.all_errors else f'confidence={v.verdict.confidence:.2f}'} -->\n<!-- PDF_REF: page={v.md_page}, section=\"{v.section or ''}\" -->\n{v.raw_md_table}"
+            err_str = " | ".join(f"reason={r}" for r in v.verdict.all_errors) if v.verdict.all_errors else ""
+            conf_str = f"confidence={v.verdict.confidence:.2f}"
+            detail_str = err_str or conf_str
+            v.annotated_md_table = (
+                f"<!-- VERIFY: {v.verdict.label} | {detail_str} -->\n"
+                f"<!-- PDF_REF: page={v.md_page}, section=\"{v.section or ''}\" -->\n"
+                f"{v.raw_md_table}"
+            )
 
         return annotated
 
@@ -371,8 +378,9 @@ class MarkdownAnnotator:
         for i, v in enumerate(self._verifications):
             err_str = " | ".join(f"reason={r}" for r in v.verdict.all_errors) if v.verdict.all_errors else ""
             conf_str = f"confidence={v.verdict.confidence:.2f}"
+            detail_str = err_str or conf_str
             v.annotated_md_table = (
-                f"<!-- VERIFY: {v.verdict.label} | {err_str or conf_str} -->\n"
+                f"<!-- VERIFY: {v.verdict.label} | {detail_str} -->\n"
                 f"<!-- PDF_REF: page={v.md_page}, section=\"{v.section or ''}\" -->\n"
                 f"{v.raw_md_table}"
             )

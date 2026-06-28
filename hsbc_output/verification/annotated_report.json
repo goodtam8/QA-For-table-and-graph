@@ -1,0 +1,444 @@
+{
+  "total_tables": 20,
+  "correct": 6,
+  "incorrect": 14,
+  "review": 0,
+  "tables": [
+    {
+      "table_index": 0,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.55,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error",
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (2 issues found)"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (13)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 1,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.75,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (1 issues found)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 2,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "CORRECT",
+        "confidence": 1.0,
+        "primary_error": null,
+        "all_errors": [],
+        "matched_rules": []
+      }
+    },
+    {
+      "table_index": 3,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.55,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error",
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (1 issues found)"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (13)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 4,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "CORRECT",
+        "confidence": 1.0,
+        "primary_error": null,
+        "all_errors": [],
+        "matched_rules": []
+      }
+    },
+    {
+      "table_index": 5,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.8,
+        "primary_error": "row_merge_error",
+        "all_errors": [
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (17)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 6,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.8,
+        "primary_error": "row_merge_error",
+        "all_errors": [
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (7)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 7,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "CORRECT",
+        "confidence": 1.0,
+        "primary_error": null,
+        "all_errors": [],
+        "matched_rules": []
+      }
+    },
+    {
+      "table_index": 8,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.55,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error",
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (1 issues found)"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (21)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 9,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.8,
+        "primary_error": "row_merge_error",
+        "all_errors": [
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (21)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 10,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.55,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error",
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (1 issues found)"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (13)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 11,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.55,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error",
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (1 issues found)"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (21)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 12,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.5,
+        "primary_error": "footnote_mismatch",
+        "all_errors": [
+          "footnote_mismatch",
+          "column_structure_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1']"
+          },
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (2 issues found)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 13,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.75,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (2 issues found)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 14,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "CORRECT",
+        "confidence": 1.0,
+        "primary_error": null,
+        "all_errors": [],
+        "matched_rules": []
+      }
+    },
+    {
+      "table_index": 15,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.55,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error",
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (1 issues found)"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "MD row count (0) significantly lower than PDF (14)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 16,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "CORRECT",
+        "confidence": 1.0,
+        "primary_error": null,
+        "all_errors": [],
+        "matched_rules": []
+      }
+    },
+    {
+      "table_index": 17,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "CORRECT",
+        "confidence": 1.0,
+        "primary_error": null,
+        "all_errors": [],
+        "matched_rules": []
+      }
+    },
+    {
+      "table_index": 18,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.75,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (2 issues found)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 19,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "INCORRECT",
+        "confidence": 0.75,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.25,
+            "reason": "Column structure mismatch (2 issues found)"
+          }
+        ]
+      }
+    }
+  ]
+}

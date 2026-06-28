@@ -285,6 +285,8 @@ def verify_with_llm(
         '- "issues": list of specific issues found'
     )
 
+    md_header = " | ".join(h.text[:30] for h in table.header)
+    md_sep = " | ".join("-" * 20 for _ in table.header)
     md_preview = "\n".join(
         " | ".join(c.text[:40] for c in row)
         for row in table.rows[:10]
@@ -299,14 +301,14 @@ def verify_with_llm(
 
     user_prompt = f"""Markdown table (up to 10 rows):
 ```
-| {' | '.join(h.text[:30] for h in table.header)} |
-{chr(10)| '.join(['-' * 20 for _ in table.header])}
+| {md_header} |
+| {md_sep} |
 {md_preview}
 ```
 
 PDF table (up to 10 rows):
 ```
-{chr(10)| '.join(row[:30] for row in pdf_table_cells[1:11]) if pdf_table_cells else 'N/A'}
+{pdf_preview if pdf_table_cells else 'N/A'}
 ```
 
 Section: {table.section or 'Unknown'}

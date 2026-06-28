@@ -11,7 +11,7 @@ Architecture:
 from .table_parser import MarkdownTableParser, ParsedTable
 from .rules_engine import RulesEngine
 from .confidence_scorer import ConfidenceScorer
-from .annotator import MarkdownAnnotator
+from .annotator import MarkdownAnnotator, load_pdf_tables_by_page, get_pdf_table_for_md_table
 
 __all__ = [
     "MarkdownTableParser",
@@ -19,4 +19,6 @@ __all__ = [
     "RulesEngine",
     "ConfidenceScorer",
     "MarkdownAnnotator",
+    "load_pdf_tables_by_page",
+    "get_pdf_table_for_md_table",
 ]
