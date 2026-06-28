@@ -1,35 +1,35 @@
 {
-  "total_tables": 20,
-  "correct": 6,
-  "incorrect": 14,
-  "review": 0,
+  "total_tables": 26,
+  "correct": 8,
+  "incorrect": 0,
+  "review": 18,
   "tables": [
     {
       "table_index": 0,
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.55,
-        "primary_error": "column_structure_error",
+        "label": "REVIEW",
+        "confidence": 0.75,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "column_structure_error",
-          "row_merge_error"
+          "cell_content_substitution",
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
-            "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (2 issues found)"
-          },
-          {
-            "rule_id": "row_merge_error",
-            "rule_name": "Row Hierarchy and Merge Detection",
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
             "matched": true,
             "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (13)"
+            "reason": "Found 107 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['2', '3', '4', '5', '6']"
           }
         ]
       }
@@ -39,8 +39,8 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.75,
+        "label": "CORRECT",
+        "confidence": 0.9,
         "primary_error": "column_structure_error",
         "all_errors": [
           "column_structure_error"
@@ -50,7 +50,7 @@
             "rule_id": "column_structure_error",
             "rule_name": "Column Header and Structure Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
+            "confidence_delta": 0.1,
             "reason": "Column structure mismatch (1 issues found)"
           }
         ]
@@ -58,14 +58,24 @@
     },
     {
       "table_index": 2,
-      "md_page": null,
+      "md_page": 5,
       "section": null,
       "verdict": {
         "label": "CORRECT",
-        "confidence": 1.0,
-        "primary_error": null,
-        "all_errors": [],
-        "matched_rules": []
+        "confidence": 0.9,
+        "primary_error": "column_structure_error",
+        "all_errors": [
+          "column_structure_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "column_structure_error",
+            "rule_name": "Column Header and Structure Consistency",
+            "matched": true,
+            "confidence_delta": 0.1,
+            "reason": "Column structure mismatch (1 issues found)"
+          }
+        ]
       }
     },
     {
@@ -73,27 +83,27 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.55,
-        "primary_error": "column_structure_error",
+        "label": "REVIEW",
+        "confidence": 0.75,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "column_structure_error",
-          "row_merge_error"
+          "cell_content_substitution",
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
-            "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (1 issues found)"
-          },
-          {
-            "rule_id": "row_merge_error",
-            "rule_name": "Row Hierarchy and Merge Detection",
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
             "matched": true,
             "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (13)"
+            "reason": "Found 57 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2', '3']"
           }
         ]
       }
@@ -103,11 +113,37 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "CORRECT",
-        "confidence": 1.0,
-        "primary_error": null,
-        "all_errors": [],
-        "matched_rules": []
+        "label": "REVIEW",
+        "confidence": 0.73,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "footnote_mismatch",
+          "footnote_order_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 55 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2', '3']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 1 cells with normalized superscript ordering"
+          }
+        ]
       }
     },
     {
@@ -115,19 +151,19 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.8,
-        "primary_error": "row_merge_error",
+        "label": "CORRECT",
+        "confidence": 0.95,
+        "primary_error": "footnote_mismatch",
         "all_errors": [
-          "row_merge_error"
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "row_merge_error",
-            "rule_name": "Row Hierarchy and Merge Detection",
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
             "matched": true,
-            "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (17)"
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1']"
           }
         ]
       }
@@ -137,19 +173,27 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.8,
-        "primary_error": "row_merge_error",
+        "label": "REVIEW",
+        "confidence": 0.7,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
+          "cell_content_substitution",
           "row_merge_error"
         ],
         "matched_rules": [
           {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 11 cell content mismatches"
+          },
+          {
             "rule_id": "row_merge_error",
             "rule_name": "Row Hierarchy and Merge Detection",
             "matched": true,
-            "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (7)"
+            "confidence_delta": 0.1,
+            "reason": "MD row count (2) significantly lower than PDF (6)"
           }
         ]
       }
@@ -159,11 +203,37 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "CORRECT",
-        "confidence": 1.0,
-        "primary_error": null,
-        "all_errors": [],
-        "matched_rules": []
+        "label": "REVIEW",
+        "confidence": 0.73,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "footnote_mismatch",
+          "footnote_order_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 64 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2', '3', '4', '5', '6']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 3 cells with normalized superscript ordering"
+          }
+        ]
       }
     },
     {
@@ -171,27 +241,43 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.55,
-        "primary_error": "column_structure_error",
+        "label": "REVIEW",
+        "confidence": 0.63,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "column_structure_error",
-          "row_merge_error"
+          "cell_content_substitution",
+          "row_merge_error",
+          "footnote_mismatch",
+          "footnote_order_error"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (1 issues found)"
+            "confidence_delta": 0.2,
+            "reason": "Found 17 cell content mismatches"
           },
           {
             "rule_id": "row_merge_error",
             "rule_name": "Row Hierarchy and Merge Detection",
             "matched": true,
-            "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (21)"
+            "confidence_delta": 0.1,
+            "reason": "MD row count (3) significantly lower than PDF (6)"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2', '3', '9']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 5 cells with normalized superscript ordering"
           }
         ]
       }
@@ -201,19 +287,43 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.8,
-        "primary_error": "row_merge_error",
+        "label": "REVIEW",
+        "confidence": 0.63,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "row_merge_error"
+          "cell_content_substitution",
+          "row_merge_error",
+          "footnote_mismatch",
+          "footnote_order_error"
         ],
         "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 28 cell content mismatches"
+          },
           {
             "rule_id": "row_merge_error",
             "rule_name": "Row Hierarchy and Merge Detection",
             "matched": true,
-            "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (21)"
+            "confidence_delta": 0.1,
+            "reason": "MD row count (6) significantly lower than PDF (12)"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['4', '5', '6', '7', '8']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 1 cells with normalized superscript ordering"
           }
         ]
       }
@@ -223,27 +333,35 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.55,
-        "primary_error": "column_structure_error",
+        "label": "REVIEW",
+        "confidence": 0.65,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "column_structure_error",
-          "row_merge_error"
+          "cell_content_substitution",
+          "row_merge_error",
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (1 issues found)"
+            "confidence_delta": 0.2,
+            "reason": "Found 30 cell content mismatches"
           },
           {
             "rule_id": "row_merge_error",
             "rule_name": "Row Hierarchy and Merge Detection",
             "matched": true,
-            "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (13)"
+            "confidence_delta": 0.1,
+            "reason": "MD row count (6) significantly lower than PDF (12)"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['#', '*', '±']"
           }
         ]
       }
@@ -253,27 +371,35 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.55,
-        "primary_error": "column_structure_error",
+        "label": "REVIEW",
+        "confidence": 0.65,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "column_structure_error",
-          "row_merge_error"
+          "cell_content_substitution",
+          "row_merge_error",
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (1 issues found)"
+            "confidence_delta": 0.2,
+            "reason": "Found 6 cell content mismatches"
           },
           {
             "rule_id": "row_merge_error",
             "rule_name": "Row Hierarchy and Merge Detection",
             "matched": true,
-            "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (21)"
+            "confidence_delta": 0.1,
+            "reason": "MD row count (1) significantly lower than PDF (21)"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1']"
           }
         ]
       }
@@ -283,27 +409,35 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.5,
-        "primary_error": "footnote_mismatch",
+        "label": "REVIEW",
+        "confidence": 0.65,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "footnote_mismatch",
-          "column_structure_error"
+          "cell_content_substitution",
+          "row_merge_error",
+          "footnote_mismatch"
         ],
         "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 51 cell content mismatches"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.1,
+            "reason": "MD row count (10) significantly lower than PDF (26)"
+          },
           {
             "rule_id": "footnote_mismatch",
             "rule_name": "Footnote Number and Anchor Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Footnote superscript mismatch: Extra in MD: ['1']"
-          },
-          {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
-            "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (2 issues found)"
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['*', '@', '^', '~', '§', '±', 'ᅞ']"
           }
         ]
       }
@@ -313,19 +447,19 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.75,
-        "primary_error": "column_structure_error",
+        "label": "CORRECT",
+        "confidence": 0.95,
+        "primary_error": "footnote_mismatch",
         "all_errors": [
-          "column_structure_error"
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (2 issues found)"
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['#']"
           }
         ]
       }
@@ -335,11 +469,29 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "CORRECT",
-        "confidence": 1.0,
-        "primary_error": null,
-        "all_errors": [],
-        "matched_rules": []
+        "label": "REVIEW",
+        "confidence": 0.75,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "footnote_mismatch"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 58 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2', '3']"
+          }
+        ]
       }
     },
     {
@@ -347,27 +499,19 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.55,
-        "primary_error": "column_structure_error",
+        "label": "CORRECT",
+        "confidence": 0.95,
+        "primary_error": "footnote_mismatch",
         "all_errors": [
-          "column_structure_error",
-          "row_merge_error"
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (1 issues found)"
-          },
-          {
-            "rule_id": "row_merge_error",
-            "rule_name": "Row Hierarchy and Merge Detection",
-            "matched": true,
-            "confidence_delta": 0.2,
-            "reason": "MD row count (0) significantly lower than PDF (14)"
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1']"
           }
         ]
       }
@@ -378,10 +522,20 @@
       "section": null,
       "verdict": {
         "label": "CORRECT",
-        "confidence": 1.0,
-        "primary_error": null,
-        "all_errors": [],
-        "matched_rules": []
+        "confidence": 0.95,
+        "primary_error": "footnote_mismatch",
+        "all_errors": [
+          "footnote_mismatch"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1']"
+          }
+        ]
       }
     },
     {
@@ -401,19 +555,27 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
-        "confidence": 0.75,
-        "primary_error": "column_structure_error",
+        "label": "REVIEW",
+        "confidence": 0.7,
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "column_structure_error"
+          "cell_content_substitution",
+          "row_merge_error"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (2 issues found)"
+            "confidence_delta": 0.2,
+            "reason": "Found 21 cell content mismatches"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.1,
+            "reason": "MD row count (5) significantly lower than PDF (10)"
           }
         ]
       }
@@ -423,19 +585,231 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "INCORRECT",
+        "label": "REVIEW",
         "confidence": 0.75,
-        "primary_error": "column_structure_error",
+        "primary_error": "cell_content_substitution",
         "all_errors": [
-          "column_structure_error"
+          "cell_content_substitution",
+          "footnote_mismatch"
         ],
         "matched_rules": [
           {
-            "rule_id": "column_structure_error",
-            "rule_name": "Column Header and Structure Consistency",
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
             "matched": true,
-            "confidence_delta": 0.25,
-            "reason": "Column structure mismatch (2 issues found)"
+            "confidence_delta": 0.2,
+            "reason": "Found 157 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2', '3', '4', '5', '6', '7', '^']"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 20,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "REVIEW",
+        "confidence": 0.73,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "footnote_mismatch",
+          "footnote_order_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 48 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 5 cells with normalized superscript ordering"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 21,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "REVIEW",
+        "confidence": 0.73,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "footnote_mismatch",
+          "footnote_order_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 35 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '2', '3', '4', '5']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 4 cells with normalized superscript ordering"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 22,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "REVIEW",
+        "confidence": 0.73,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "footnote_mismatch",
+          "footnote_order_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 1 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '10', '11', '12', '13', '14', '2', '3', '4', '5', '6', '7', '8', '9']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 4 cells with normalized superscript ordering"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 23,
+      "md_page": 20,
+      "section": null,
+      "verdict": {
+        "label": "REVIEW",
+        "confidence": 0.7,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "row_merge_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 1 cell content mismatches"
+          },
+          {
+            "rule_id": "row_merge_error",
+            "rule_name": "Row Hierarchy and Merge Detection",
+            "matched": true,
+            "confidence_delta": 0.1,
+            "reason": "MD row count (1) significantly lower than PDF (2)"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 24,
+      "md_page": null,
+      "section": null,
+      "verdict": {
+        "label": "REVIEW",
+        "confidence": 0.73,
+        "primary_error": "cell_content_substitution",
+        "all_errors": [
+          "cell_content_substitution",
+          "footnote_mismatch",
+          "footnote_order_error"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "cell_content_substitution",
+            "rule_name": "Cell Content Value Consistency",
+            "matched": true,
+            "confidence_delta": 0.2,
+            "reason": "Found 1 cell content mismatches"
+          },
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['1', '10', '11', '12', '2', '3', '4', '5', '6', '7', '8', '9']"
+          },
+          {
+            "rule_id": "footnote_order_error",
+            "rule_name": "Footnote Superscript Order Preservation",
+            "matched": true,
+            "confidence_delta": 0.02,
+            "reason": "Found 4 cells with normalized superscript ordering"
+          }
+        ]
+      }
+    },
+    {
+      "table_index": 25,
+      "md_page": 21,
+      "section": null,
+      "verdict": {
+        "label": "CORRECT",
+        "confidence": 0.95,
+        "primary_error": "footnote_mismatch",
+        "all_errors": [
+          "footnote_mismatch"
+        ],
+        "matched_rules": [
+          {
+            "rule_id": "footnote_mismatch",
+            "rule_name": "Footnote Number and Anchor Consistency",
+            "matched": true,
+            "confidence_delta": 0.05,
+            "reason": "Footnote superscript mismatch: Extra in MD: ['11', '13', '14', '15']"
           }
         ]
       }

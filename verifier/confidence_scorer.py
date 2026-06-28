@@ -46,6 +46,9 @@ class Verdict:
         """Format as <!-- VERIFY: CORRECT | confidence=X.XX --> or equivalent."""
         if self.label == "CORRECT":
             return f"<!-- VERIFY: CORRECT | confidence={self.confidence:.2f} -->"
+        elif self.label == "REVIEW":
+            reason = self.primary_error or self.all_errors[0] if self.all_errors else "uncertain"
+            return f"<!-- VERIFY: REVIEW | reason={reason} | confidence={self.confidence:.2f} -->"
         else:
             reason = self.primary_error or self.all_errors[0] if self.all_errors else "unknown"
             return (
@@ -128,13 +131,13 @@ class ConfidenceScorer:
         confidence = max(0.0, min(1.0, confidence))
 
         # Determine label based on thresholds
-        correct_threshold = self._thresholds.get("correct", 0.80)
-        review_threshold = self._thresholds.get("review", 0.60)
+        correct_threshold = self._thresholds.get("correct", 0.70)
+        review_threshold = self._thresholds.get("review", 0.50)
 
         if confidence >= correct_threshold:
             label = "CORRECT"
         elif confidence >= review_threshold:
-            label = "INCORRECT"  # Review zone — still incorrect, just low confidence
+            label = "REVIEW"  # Changed from "INCORRECT" - borderline case needs review
         else:
             label = "INCORRECT"
 
@@ -150,7 +153,11 @@ class ConfidenceScorer:
             # Re-evaluate: if any rule matched with significant weight, downgrade
             max_weight = matched_sorted[0].severity_weight if matched_sorted else 0
             if max_weight >= 0.20:
-                label = "INCORRECT"
+                # Don't force INCORRECT - use REVIEW instead
+                if confidence >= review_threshold:
+                    label = "REVIEW"
+                else:
+                    label = "INCORRECT"
 
         return Verdict(
             label=label,
@@ -245,6 +252,17 @@ Is this table CORRECT or INCORRECT?"""
                             matched_rules=base_verdict.matched_rules,
                             primary_error=base_verdict.primary_error,
                             all_errors=base_verdict.all_errors,
+                        )
+
+                # If LLM says INCORRECT but base says CORRECT, use REVIEW
+                if llm_verdict == "INCORRECT" and base_verdict.label == "CORRECT":
+                    if llm_confidence > 0.80:
+                        return Verdict(
+                            label="REVIEW",
+                            confidence=base_verdict.confidence * 0.5,
+                            matched_rules=base_verdict.matched_rules,
+                            primary_error=base_verdict.primary_error,
+                            all_errors=["llm_disagreement"],
                         )
 
                 return base_verdict

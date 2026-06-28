@@ -356,15 +356,12 @@ class MarkdownTableParser:
 
             # Table separator/delimiter row (|---|)
             if self._is_delimiter(line):
-                # Start of a new table
-                if in_table and table_lines:
-                    # Flush previous table
-                    table = self._build_table(table_lines, preamble[:-1] if preamble else [], table_index)
-                    self._tables.append(table)
-                    table_index += 1
-                    table_lines = []
-                    preamble = []
-                in_table = True
+                # If we're already in a table, the delimiter is part of it (don't flush!)
+                # If we're not in a table, this is the start of a table
+                if not in_table:
+                    in_table = True
+                    # Reset preamble to only include section headings before the delimiter
+                    # (page markers before delimiter don't apply to this table)
                 table_lines.append(line)
                 i += 1
                 continue

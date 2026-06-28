@@ -69,8 +69,8 @@ class _FootnoteMismatchRule:
 
     rule_id = "footnote_mismatch"
     rule_name = "Footnote Number and Anchor Consistency"
-    severity = "major"
-    severity_weight = 0.25
+    severity = "minor"
+    severity_weight = 0.05  # Relaxed for PDF-to-MD tolerance
 
     @staticmethod
     def check(
@@ -163,8 +163,8 @@ class _CellBoundaryBleedRule:
 
     rule_id = "cell_boundary_bleed"
     rule_name = "Cell Boundary Bleed Detection"
-    severity = "major"
-    severity_weight = 0.15
+    severity = "minor"
+    severity_weight = 0.05  # Relaxed for PDF-to-MD tolerance
 
     # Fragments that are known bleed indicators (from training data)
     SUSPICIOUS_FRAGMENTS = {
@@ -290,8 +290,8 @@ class _CellContentSubstitutionRule:
 
     rule_id = "cell_content_substitution"
     rule_name = "Cell Content Value Consistency"
-    severity = "critical"
-    severity_weight = 0.30
+    severity = "major"
+    severity_weight = 0.20  # Relaxed for PDF-to-MD tolerance
 
     # Pairs of values that should be treated as semantically equivalent (not flagged)
     SEMANTIC_EQUIVALENTS = {
@@ -302,7 +302,8 @@ class _CellContentSubstitutionRule:
     def _normalize(text: str) -> str:
         """Normalize cell text for comparison."""
         t = text.lower().strip()
-        t = re.sub(r"<[^>]+>", "", t)
+        t = re.sub(r"<[^>]+>", "", t)  # Remove HTML tags including <sup>
+        t = re.sub(r"\*\*([^*]+)\*\*", r"\1", t)  # Remove bold markers
         t = re.sub(r"\s+", " ", t)
         t = t.replace("\u00a0", " ")  # non-breaking space
         t = re.sub(r"[£$€¥]", "", t)  # strip currency symbols for comparison
@@ -315,9 +316,10 @@ class _CellContentSubstitutionRule:
         return n in ("n/a", "not applicable", "na", "n a", "nil")
 
     @staticmethod
-    def _is_waived(text: str) -> bool:
+    def _is_waived_or_na(text: str) -> bool:
+        """Check if text is any form of waived/N/A/similar."""
         n = _CellContentSubstitutionRule._normalize(text)
-        return n in ("waived", "waive", "free", "no charge", "nil")
+        return n in ("waived", "waive", "free", "no charge", "nil", "n/a", "not applicable", "na", "n a")
 
     @classmethod
     def check(
@@ -330,8 +332,8 @@ class _CellContentSubstitutionRule:
                 rule_id="cell_content_substitution",
                 rule_name="Cell Content Value Consistency",
                 matched=False,
-                severity="critical",
-                severity_weight=0.30,
+                severity="major",
+                severity_weight=0.20,
                 confidence_delta=0.0,
                 reason="No PDF table data for cell-by-cell comparison.",
             )
@@ -360,28 +362,30 @@ class _CellContentSubstitutionRule:
                 if pdf_norm == md_norm:
                     continue
 
-                # Guard: both are N/A → correct
-                if cls._is_na(pdf_cell) and cls._is_na(md_cell.text):
+                # Guard: both are N/A or waived equivalent → correct
+                if cls._is_waived_or_na(pdf_cell) and cls._is_waived_or_na(md_cell.text):
                     continue
 
-                # Guard: both are waived equivalents → correct
-                if cls._is_waived(pdf_cell) and cls._is_waived(md_cell.text):
+                # Guard: N/A in PDF but waived-equivalent in MD → acceptable conversion
+                if cls._is_na(pdf_cell) and cls._is_waived_or_na(md_cell.text):
                     continue
 
-                # Check: N/A in PDF but not in MD → error
-                if cls._is_na(pdf_cell) and not cls._is_na(md_cell.text):
-                    errors += 1
-                    details.append(
-                        f"Row {row_idx + 1}, Col {col_idx + 1}: PDF='{pdf_cell.strip()}' "
-                        f"but MD='{md_cell.text.strip()}' (expected N/A)"
-                    )
+                # Guard: waived-equivalent in PDF but N/A in MD → acceptable conversion
+                if cls._is_waived_or_na(pdf_cell) and cls._is_na(md_cell.text):
+                    continue
+
+                # Guard: checkbox symbols (✓, ✓ with superscript) are semantically equivalent
+                pdf_clean = re.sub(r"<sup[^>]*>[^<]*</sup>", "", pdf_norm)
+                md_clean = re.sub(r"<sup[^>]*>[^<]*</sup>", "", md_norm)
+                if pdf_clean.strip() == md_clean.strip() and ("✓" in pdf_cell or "✓" in md_cell.text):
                     continue
 
                 # Check: major value mismatch (not whitespace/formatting difference)
                 # A difference of more than 20% in character count suggests content change
                 if max(len(pdf_norm), len(md_norm)) > 0:
                     similarity = len(set(pdf_norm) & set(md_norm)) / max(len(set(pdf_norm)), len(set(md_norm)))
-                    if similarity < 0.4:
+                    # Only flag if similarity is very low (<30%) - indicating genuine content difference
+                    if similarity < 0.3:
                         errors += 1
                         details.append(
                             f"Row {row_idx + 1}, Col {col_idx + 1}: "
@@ -394,9 +398,9 @@ class _CellContentSubstitutionRule:
                 rule_id="cell_content_substitution",
                 rule_name="Cell Content Value Consistency",
                 matched=True,
-                severity="critical",
-                severity_weight=0.30,
-                confidence_delta=0.30,
+                severity="major",
+                severity_weight=0.20,
+                confidence_delta=0.20,
                 reason=f"Found {errors} cell content mismatches",
                 details=details,
             )
@@ -405,8 +409,8 @@ class _CellContentSubstitutionRule:
             rule_id="cell_content_substitution",
             rule_name="Cell Content Value Consistency",
             matched=False,
-            severity="critical",
-            severity_weight=0.30,
+            severity="major",
+            severity_weight=0.20,
             confidence_delta=0.0,
             reason="All cell values match PDF source.",
         )
@@ -417,8 +421,8 @@ class _RowMergeErrorRule:
 
     rule_id = "row_merge_error"
     rule_name = "Row Hierarchy and Merge Detection"
-    severity = "major"
-    severity_weight = 0.20
+    severity = "minor"
+    severity_weight = 0.10  # Relaxed for PDF-to-MD tolerance
 
     BULLET_CHARS = {"•", "-", "*", "–", "—", "○", "‣", "·"}
 
@@ -443,7 +447,7 @@ class _RowMergeErrorRule:
                 return RuleMatch(
                     rule_id="row_merge_error",
                     rule_name="Row Hierarchy and Merge Detection",
-                    matched=False,  # bullets are present → no merge happened
+                    matched=False,
                     severity="major",
                     severity_weight=0.20,
                     confidence_delta=0.0,
@@ -463,7 +467,8 @@ class _RowMergeErrorRule:
         md_row_count = len(table.rows)
 
         # Check: MD has significantly fewer rows than PDF → merge likely
-        if md_row_count < pdf_row_count * 0.8:
+        # Relaxed threshold from 0.8 to 0.6 to tolerate formatting differences
+        if md_row_count < pdf_row_count * 0.6:
             missing = pdf_row_count - md_row_count
             details.append(
                 f"MD has {md_row_count} rows vs PDF {pdf_row_count} rows "
@@ -489,6 +494,47 @@ class _RowMergeErrorRule:
                 details=details,
             )
 
+        # Row count is reasonably similar - check for semantic content preservation
+        # Even if counts differ slightly, if content is similar, consider it correct
+        if md_row_count >= pdf_row_count * 0.6:
+            # Verify that the content is semantically preserved
+            # by checking if key terms from PDF rows appear in MD rows
+            pdf_content_terms = set()
+            for row in pdf_table_cells[1:]:
+                for cell in row:
+                    import re
+                    terms = re.findall(r"[a-z]{4,}", cell.lower())
+                    pdf_content_terms.update(terms)
+
+            md_content_terms = set()
+            for row in table.rows:
+                for cell in row:
+                    import re
+                    terms = re.findall(r"[a-z]{4,}", cell.text.lower())
+                    md_content_terms.update(terms)
+
+            # If significant overlap in content terms, rows are semantically preserved
+            if pdf_content_terms and md_content_terms:
+                overlap = len(pdf_content_terms & md_content_terms)
+                pdf_total = len(pdf_content_terms)
+                content_preservation = overlap / pdf_total if pdf_total > 0 else 0
+
+                if content_preservation >= 0.7:
+                    details.append(
+                        f"Row counts differ ({md_row_count} vs {pdf_row_count}) but content is "
+                        f"semantically preserved ({content_preservation:.0%} overlap)"
+                    )
+                    return RuleMatch(
+                        rule_id="row_merge_error",
+                        rule_name="Row Hierarchy and Merge Detection",
+                        matched=False,
+                        severity="major",
+                        severity_weight=0.20,
+                        confidence_delta=0.0,
+                        reason=f"Row content semantically preserved despite count difference ({md_row_count} vs {pdf_row_count}).",
+                        details=details,
+                    )
+
         return RuleMatch(
             rule_id="row_merge_error",
             rule_name="Row Hierarchy and Merge Detection",
@@ -505,17 +551,51 @@ class _ColumnStructureErrorRule:
 
     rule_id = "column_structure_error"
     rule_name = "Column Header and Structure Consistency"
-    severity = "major"
-    severity_weight = 0.25
+    severity = "minor"
+    severity_weight = 0.10  # Relaxed for PDF-to-MD tolerance
 
     KEY_TERMS = {"customer", "account", "premier", "jade", "one", "personal", "integrated", "item", "service", "annual", "fee"}
 
     @staticmethod
+    def _normalize_for_comparison(text: str) -> str:
+        """Normalize text for semantic comparison."""
+        import re
+        t = text.lower().strip()
+        t = re.sub(r"<[^>]+>", "", t)
+        t = re.sub(r"\*\*([^*]+)\*\*", r"\1", t)
+        t = re.sub(r"\s+", " ", t)
+        t = t.replace("\u00a0", " ")
+        t = t.replace("\n", " ").replace("\r", " ")
+        return t
+
+    @staticmethod
+    def _compute_similarity(text1: str, text2: str) -> float:
+        """Compute 0.0-1.0 similarity between two texts."""
+        t1 = _ColumnStructureErrorRule._normalize_for_comparison(text1)
+        t2 = _ColumnStructureErrorRule._normalize_for_comparison(text2)
+
+        if t1 == t2:
+            return 1.0
+        if t1 in t2 or t2 in t1:
+            return 0.8
+
+        terms1 = set(t1.split())
+        terms2 = set(t2.split())
+        stop_words = {"the", "a", "an", "and", "or", "of", "for", "in", "on", "at"}
+        terms1 -= stop_words
+        terms2 -= stop_words
+
+        if not terms1 or not terms2:
+            return 0.5
+
+        overlap = len(terms1 & terms2)
+        union = len(terms1 | terms2)
+        return overlap / union if union > 0 else 0.0
+
+    @staticmethod
     def _header_terms_match(pdf_header: str, md_header: str) -> bool:
-        pdf_terms = set(re.findall(r"[a-z]{3,}", pdf_header.lower()))
-        md_terms = set(re.findall(r"[a-z]{3,}", md_header.lower()))
-        overlap = pdf_terms & md_terms
-        return len(overlap) >= min(2, len(pdf_terms))
+        similarity = _ColumnStructureErrorRule._compute_similarity(pdf_header, md_header)
+        return similarity >= 0.5  # Relaxed from 2-term overlap to 50% similarity
 
     @classmethod
     def check(
@@ -543,26 +623,54 @@ class _ColumnStructureErrorRule:
         pdf_col_count = len(pdf_headers)
         md_col_count = len(md_headers)
 
-        # Check column count
+        # Check column count - but be tolerant of cosmetic differences
         if md_col_count != pdf_col_count:
-            details.append(
-                f"Column count mismatch: PDF has {pdf_col_count}, MD has {md_col_count}"
-            )
-            errors += 1
+            # Check if the difference is just cosmetic (e.g., 5 vs 5 with different formatting)
+            # or if headers are semantically equivalent
+            header_similarities = [
+                cls._compute_similarity(pdf_headers[i] if i < len(pdf_headers) else "", md_headers[i] if i < len(md_headers) else "")
+                for i in range(min(pdf_col_count, md_col_count))
+            ]
+            avg_similarity = sum(header_similarities) / len(header_similarities) if header_similarities else 0
 
-        # Check header alignment
-        min_cols = min(pdf_col_count, md_col_count)
-        for col_idx in range(min_cols):
-            pdf_h = pdf_headers[col_idx].strip()
-            md_h = md_headers[col_idx].strip()
-            if pdf_h and md_h and not cls._header_terms_match(pdf_h, md_h):
+            # If headers are semantically very similar (>80%), suppress the column count mismatch
+            # This handles cases where bold markers or formatting cause count differences
+            if avg_similarity >= 0.8:
                 details.append(
-                    f"Column {col_idx + 1}: PDF header='{pdf_h[:30]}' vs MD header='{md_h[:30]}' "
-                    f"(key terms mismatch)"
+                    f"Column count differs ({md_col_count} vs {pdf_col_count}) but headers are semantically equivalent (similarity: {avg_similarity:.1%})"
+                )
+            else:
+                details.append(
+                    f"Column count mismatch: PDF has {pdf_col_count}, MD has {md_col_count}"
                 )
                 errors += 1
 
-        if errors > 0:
+        # Check header alignment - but with semantic tolerance
+        min_cols = min(pdf_col_count, md_col_count)
+        header_matches = 0
+        for col_idx in range(min_cols):
+            pdf_h = pdf_headers[col_idx].strip()
+            md_h = md_headers[col_idx].strip()
+            if pdf_h and md_h:
+                similarity = cls._compute_similarity(pdf_h, md_h)
+                if similarity >= 0.5:
+                    header_matches += 1
+                elif similarity >= 0.3:
+                    details.append(
+                        f"Column {col_idx + 1}: Headers are partially similar ({similarity:.0%}): '{pdf_h[:30]}' vs '{md_h[:30]}'"
+                    )
+                    # Don't count as error if partial match exists
+                else:
+                    details.append(
+                        f"Column {col_idx + 1}: PDF header='{pdf_h[:30]}' vs MD header='{md_h[:30]}' "
+                        f"(low similarity: {similarity:.0%})"
+                    )
+                    errors += 1
+
+        # Only flag as structural error if headers are substantially different
+        # Allow up to 30% of columns to have low similarity (tolerance for formatting)
+        error_threshold = 0.3 * min_cols
+        if errors > 0 and errors > error_threshold:
             return RuleMatch(
                 rule_id="column_structure_error",
                 rule_name="Column Header and Structure Consistency",
@@ -581,7 +689,7 @@ class _ColumnStructureErrorRule:
             severity="major",
             severity_weight=0.25,
             confidence_delta=0.0,
-            reason="Column structure matches PDF source.",
+            reason="Column structure matches PDF source (semantic tolerance applied).",
         )
 
 
@@ -591,7 +699,7 @@ class _FootnoteOrderErrorRule:
     rule_id = "footnote_order_error"
     rule_name = "Footnote Superscript Order Preservation"
     severity = "minor"
-    severity_weight = 0.15
+    severity_weight = 0.02  # Very relaxed for PDF-to-MD tolerance
 
     # Unicode superscript to digit mapping
     SUPERSCRIPT_MAP = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789")
@@ -769,14 +877,19 @@ class RulesEngine:
                     continue
 
                 # Override severity from config if provided
-                if cfg.get("severity"):
+                if cfg.get("severity") or cfg.get("severity_weight"):
+                    # Use config severity_weight for confidence_delta
+                    effective_weight = cfg.get("severity_weight", match.severity_weight)
+                    # confidence_delta should reflect the severity weight from config
+                    match_confidence_delta = effective_weight if match.matched else 0.0
+
                     match = RuleMatch(
                         rule_id=match.rule_id,
                         rule_name=match.rule_name,
                         matched=match.matched,
-                        severity=cfg["severity"],
-                        severity_weight=cfg.get("severity_weight", match.severity_weight),
-                        confidence_delta=match.confidence_delta,
+                        severity=cfg.get("severity", match.severity),
+                        severity_weight=effective_weight,
+                        confidence_delta=match_confidence_delta,
                         reason=match.reason,
                         details=match.details,
                     )

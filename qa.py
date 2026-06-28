@@ -452,12 +452,21 @@ def answer(question: str) -> QAAnswer:
 
         # ── 3a. CORRECT / REVIEW → answer directly ─────────────────────
         if table.label in ("CORRECT", "REVIEW"):
+            warning = None
+            if table.label == "REVIEW":
+                reason_str = ", ".join(table.error_reasons) if table.error_reasons else "uncertain_verification"
+                warning = (
+                    f"⚠️  This table has REVIEW status (confidence={table.confidence:.2f}). "
+                    f"Reason: {reason_str}. "
+                    f"Answer is provided but may need verification."
+                )
+
             llm_answer = answerdirectly(question, table.md_table_body)
             return QAAnswer(
                 status="answered",
                 answer=llm_answer,
                 images=[],
-                warning=None,
+                warning=warning,
                 table_verdict=table,
             )
 

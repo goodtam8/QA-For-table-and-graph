@@ -88,34 +88,192 @@ def get_pdf_table_for_md_table(
     from pdf_tables_by_page.json.
 
     Returns (pdf_table_cells, pdf_footnotes) or (None, None) if not found.
+
+    Uses a multi-stage matching strategy:
+    1. Page + column count match
+    2. Semantic header similarity match across all pages
+    3. Cell content similarity match for final disambiguation
     """
     pages = pdf_tables_by_page.get("pages", [])
     target_page = pdf_page_hint - 1 if pdf_page_hint else None
 
+    md_headers = md_table.header_texts()
+    md_col_count = len(md_headers)
+
+    # Stage 1: Try exact page match with column count verification
     if target_page is not None:
         if 0 <= target_page < len(pages):
             page_data = pages[target_page]
             tables = page_data if isinstance(page_data, list) else page_data.get("tables", [])
             if tables:
-                tbl = tables[0]  # first table on the page
-                cells = tbl.get("cells", [])
-                # Try to extract footnotes from table header/section
-                footnotes = _extract_footnotes_from_pdf_table(cells)
-                return cells, footnotes
+                for tbl in tables:
+                    cells = tbl.get("cells", [])
+                    if cells and len(cells[0]) == md_col_count:
+                        # Verify header semantic similarity
+                        pdf_headers = cells[0]
+                        if _headers_semantically_match(pdf_headers, md_headers, md_col_count):
+                            footnotes = _extract_footnotes_from_pdf_table(cells)
+                            return cells, footnotes
 
-    # Fallback: search all pages for matching column count
+    # Stage 2: Search all pages for table with matching column count + semantic similarity
     best_match = None
+    best_score = 0.0
+
     for page_idx, page_data in enumerate(pages):
         tables = page_data if isinstance(page_data, list) else page_data.get("tables", [])
         for tbl in tables:
             cells = tbl.get("cells", [])
-            if len(cells) > 0 and len(cells[0]) == md_table.ncols:
-                best_match = (cells, _extract_footnotes_from_pdf_table(cells))
-                break
-        if best_match:
-            break
+            if not cells:
+                continue
 
-    return best_match if best_match else (None, None)
+            pdf_col_count = len(cells[0])
+
+            # Check column count match first
+            if pdf_col_count != md_col_count:
+                continue
+
+            pdf_headers = cells[0]
+            similarity = _compute_header_similarity(pdf_headers, md_headers)
+
+            if similarity >= 0.5:  # At least 50% semantic match
+                # Stage 3: Verify with cell content similarity
+                content_score = _compute_content_similarity(cells, md_table)
+                combined_score = (similarity * 0.6) + (content_score * 0.4)
+
+                if combined_score > best_score:
+                    best_score = combined_score
+                    best_match = (cells, _extract_footnotes_from_pdf_table(cells))
+
+    if best_match and best_score >= 0.3:
+        return best_match
+
+    # Stage 4: Last resort - return None (don't match wrong table)
+    # This prevents false positives from mismatched tables
+    return None, None
+
+
+def _normalize_for_comparison(text: str) -> str:
+    """Normalize text for semantic comparison."""
+    import re
+    t = text.lower().strip()
+    t = re.sub(r"<[^>]+>", "", t)  # Remove HTML tags
+    t = re.sub(r"\*\*([^*]+)\*\*", r"\1", t)  # Remove bold markers
+    t = re.sub(r"\s+", " ", t)  # Normalize whitespace
+    t = t.replace("\u00a0", " ")  # Non-breaking space
+    t = t.replace("\n", " ").replace("\r", " ")
+    return t
+
+
+def _headers_semantically_match(
+    pdf_headers: list[str],
+    md_headers: list[str],
+    min_cols: int,
+) -> bool:
+    """Check if PDF and MD headers are semantically similar."""
+    if len(pdf_headers) != len(md_headers):
+        return False
+
+    matches = 0
+    for pdf_h, md_h in zip(pdf_headers[:min_cols], md_headers[:min_cols]):
+        pdf_norm = _normalize_for_comparison(pdf_h)
+        md_norm = _normalize_for_comparison(md_h)
+
+        # Check if normalized texts share significant terms
+        pdf_terms = set(pdf_norm.split())
+        md_terms = set(md_norm.split())
+
+        # Remove very short terms and common words
+        stop_words = {"the", "a", "an", "and", "or", "of", "for", "in", "on", "at"}
+        pdf_terms -= stop_words
+        md_terms -= stop_words
+
+        if not pdf_terms or not md_terms:
+            matches += 1  # Empty headers match
+            continue
+
+        overlap = len(pdf_terms & md_terms)
+        union = len(pdf_terms | md_terms)
+        jaccard = overlap / union if union > 0 else 0
+
+        if jaccard >= 0.4 or pdf_norm in md_norm or md_norm in pdf_norm:
+            matches += 1
+
+    return matches >= min_cols * 0.7  # 70% of columns should match
+
+
+def _compute_header_similarity(
+    pdf_headers: list[str],
+    md_headers: list[str],
+) -> float:
+    """Compute 0.0-1.0 similarity score between header lists."""
+    if len(pdf_headers) != len(md_headers):
+        return 0.0
+
+    total_similarity = 0.0
+    for pdf_h, md_h in zip(pdf_headers, md_headers):
+        pdf_norm = _normalize_for_comparison(pdf_h)
+        md_norm = _normalize_for_comparison(md_h)
+
+        if pdf_norm == md_norm:
+            total_similarity += 1.0
+        elif pdf_norm in md_norm or md_norm in pdf_norm:
+            total_similarity += 0.8
+        else:
+            pdf_terms = set(pdf_norm.split())
+            md_terms = set(md_norm.split())
+            stop_words = {"the", "a", "an", "and", "or", "of", "for", "in", "on", "at"}
+            pdf_terms -= stop_words
+            md_terms -= stop_words
+
+            if pdf_terms and md_terms:
+                overlap = len(pdf_terms & md_terms)
+                union = len(pdf_terms | md_terms)
+                total_similarity += overlap / union if union > 0 else 0
+            else:
+                total_similarity += 0.5
+
+    return total_similarity / len(pdf_headers) if pdf_headers else 0.0
+
+
+def _compute_content_similarity(
+    pdf_cells: list[list[str]],
+    md_table: ParsedTable,
+) -> float:
+    """Compute content similarity between PDF table and MD table."""
+    if not pdf_cells or len(pdf_cells) < 2:
+        return 0.0
+
+    pdf_data_rows = pdf_cells[1:]  # Skip header
+    md_rows = md_table.rows
+
+    if not pdf_data_rows or not md_rows:
+        return 0.0
+
+    # Sample rows for efficiency
+    sample_size = min(5, len(pdf_data_rows), len(md_rows))
+    matches = 0
+    total_checks = sample_size * min(len(pdf_data_rows[0]), len(md_rows[0]) if md_rows else 0)
+
+    for i in range(sample_size):
+        pdf_row_idx = min(i, len(pdf_data_rows) - 1)
+        md_row_idx = min(i, len(md_rows) - 1)
+
+        pdf_row = pdf_data_rows[pdf_row_idx]
+        md_row = md_rows[md_row_idx]
+
+        for j in range(min(len(pdf_row), len(md_row))):
+            pdf_norm = _normalize_for_comparison(pdf_row[j])
+            md_norm = _normalize_for_comparison(md_row[j].text)
+
+            # Check for exact match or substring match
+            if pdf_norm == md_norm:
+                matches += 2
+            elif pdf_norm in md_norm or md_norm in pdf_norm:
+                matches += 1.5
+            elif set(pdf_norm.split()) & set(md_norm.split()):
+                matches += 1
+
+    return matches / max(total_checks, 1)
 
 
 def _extract_footnotes_from_pdf_table(cells: list[list[str]]) -> dict[str, str]:
@@ -245,18 +403,51 @@ class MarkdownAnnotator:
                 table, self.pdf_tables_by_page, actual_page
             )
 
-            # Run rules engine
-            result = self.rules_engine.check_table(
-                table, pdf_cells, pdf_footnotes, self.llm_client
-            )
+            # If no PDF match found but we have substantial table content, use LLM for verification
+            if pdf_cells is None and self.llm_client:
+                from .confidence_scorer import verify_with_llm
+                llm_result = verify_with_llm(table, None, self.llm_client)
+                llm_verdict_label = llm_result.get("verdict", "UNKNOWN")
+                llm_confidence = llm_result.get("confidence", 0.5)
 
-            # Compute verdict
-            if self.llm_client and 0.60 <= self.confidence_scorer.compute_verdict(result).confidence < 0.85:
-                verdict = self.confidence_scorer.compute_with_llm_refinement(
-                    result, table, pdf_cells, self.llm_client
-                )
+                if llm_verdict_label == "CORRECT":
+                    verdict = Verdict(
+                        label="CORRECT",
+                        confidence=min(0.85, llm_confidence + 0.1),
+                        matched_rules=[],
+                        primary_error=None,
+                        all_errors=[],
+                    )
+                elif llm_verdict_label == "INCORRECT":
+                    verdict = Verdict(
+                        label="REVIEW",
+                        confidence=llm_confidence * 0.7,
+                        matched_rules=[],
+                        primary_error="llm_assessment",
+                        all_errors=["llm_assessment"],
+                    )
+                else:
+                    # Unknown verdict - default to REVIEW
+                    verdict = Verdict(
+                        label="REVIEW",
+                        confidence=0.50,
+                        matched_rules=[],
+                        primary_error="uncertain",
+                        all_errors=["llm_uncertain"],
+                    )
             else:
-                verdict = self.confidence_scorer.compute_verdict(result)
+                # Run rules engine
+                result = self.rules_engine.check_table(
+                    table, pdf_cells, pdf_footnotes, self.llm_client
+                )
+
+                # Compute verdict
+                if self.llm_client and 0.50 <= self.confidence_scorer.compute_verdict(result).confidence < 0.85:
+                    verdict = self.confidence_scorer.compute_with_llm_refinement(
+                        result, table, pdf_cells, self.llm_client
+                    )
+                else:
+                    verdict = self.confidence_scorer.compute_verdict(result)
 
             # Build verification object
             verification = TableVerification(
