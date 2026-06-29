@@ -1,15 +1,15 @@
 {
   "total_tables": 26,
   "correct": 8,
-  "incorrect": 0,
-  "review": 18,
+  "incorrect": 18,
+  "review": 0,
   "tables": [
     {
       "table_index": 0,
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.75,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -83,7 +83,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.75,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -113,7 +113,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.73,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -173,7 +173,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.7,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -203,7 +203,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.73,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -241,7 +241,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.63,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -287,7 +287,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.63,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -333,7 +333,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.65,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -371,7 +371,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.65,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -409,7 +409,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.65,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -469,7 +469,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.75,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -555,7 +555,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.7,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -585,7 +585,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.75,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -615,7 +615,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.73,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -653,7 +653,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.73,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -691,7 +691,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.73,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -729,7 +729,7 @@
       "md_page": 20,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.7,
         "primary_error": "cell_content_substitution",
         "all_errors": [
@@ -759,7 +759,7 @@
       "md_page": null,
       "section": null,
       "verdict": {
-        "label": "REVIEW",
+        "label": "INCORRECT",
         "confidence": 0.73,
         "primary_error": "cell_content_substitution",
         "all_errors": [

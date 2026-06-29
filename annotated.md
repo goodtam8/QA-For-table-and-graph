@@ -56,7 +56,7 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 7. **Credit facilities** — HSBC Jade, HSBC Premier, HSBC One and Personal Integrated Account customers can enjoy credit facilities.
 8. **Use these self-service methods for more convenient and efficient money management.**
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
 <!-- PDF_REF:  -->
 | Service | **HSBC Internet Banking** | **HSBC Mobile Banking** | **Phonebanking Automated** | **Phonebanking Personal** | **Self-service banking** |
 |---|---|---|---|---|---|
@@ -278,7 +278,7 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ### A1. General services – all accounts
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -308,7 +308,7 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ### A1. General services – all accounts
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -357,7 +357,7 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ### A2. General services – overseas services
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.70 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.70 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -370,7 +370,7 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ## B. Deposit account/services
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
 <!-- PDF_REF:  -->
 | Item | **Hong Kong dollar Current** | **Hong Kong dollar Savings** | **Hong Kong dollar Cash Card** | **Renminbi Current** | **Renminbi Savings** | **US dollar Current** | **US dollar Savings** | **Other foreign currencies Current** | **Other foreign currencies Savings** | **Wayfoong Passbook Gold** |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -407,7 +407,7 @@ Note: After imposing the early uplift handling fee, the principal amount receive
 
 ### C1. Payment services – autoPay services
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.63 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.63 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -419,7 +419,7 @@ Note: After imposing the early uplift handling fee, the principal amount receive
 
 #### Inward payments
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.63 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.63 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -452,7 +452,7 @@ Note: After imposing the early uplift handling fee, the principal amount receive
 
 #### Outward payments
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.65 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.65 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -475,7 +475,7 @@ Note:
 
 ### C3. Global Transfers
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.65 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.65 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -487,7 +487,7 @@ Note:
 
 ### C4. Interbank fund transfers
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.65 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.65 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -532,7 +532,7 @@ Note:
 
 ## D. Mortgage services
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -627,7 +627,7 @@ To determine your overall TRB in joint capacity, the applicable TRB of all your 
 
 ### Overdraft
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.70 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.70 -->
 <!-- PDF_REF:  -->
 | Item | **HSBC One and Personal Integrated Account — Clean Credit** | **HSBC One and Personal Integrated Account — Secured Credit** | **HSBC Premier and HSBC Jade — Clean Credit** | **HSBC Premier and HSBC Jade — Secured Credit** |
 |---|---|---|---|---|
@@ -645,7 +645,7 @@ To determine your overall TRB in joint capacity, the applicable TRB of all your 
 
 ### G1. Personal credit cards
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
 <!-- PDF_REF:  -->
 | Item | **HSBC Premier Mastercard® Credit Card** | **HSBC Advance Visa Platinum Card** | **HSBC Red Credit Card** | **HSBC Visa Signature Card** | **HSBC EveryMile Credit Card** | **Platinum Card (incl. green credit card)** | **Visa Gold, Gold Mastercard** | **Visa, Mastercard** | **iCAN Card** | **US dollar Visa Gold** | **HSBC Pulse UnionPay Dual Currency Diamond Card** | **UnionPay Dual Currency Card** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -698,7 +698,7 @@ Note:
 
 ### G2. ATM card/Other account cards
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
@@ -739,7 +739,7 @@ Note:
 
 ### G3. Mastercard Debit Card/Mastercard Supplementary Debit Card
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
 <!-- PDF_REF:  -->
 | Item | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|
@@ -770,7 +770,7 @@ Note:
 
 HSBC Jade brings you full fee waivers or preferential offers for selected products and services.
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
 <!-- PDF_REF:  -->
 | Items | Special privileges |
 |---|---|
@@ -801,7 +801,7 @@ HSBC Jade brings you full fee waivers or preferential offers for selected produc
 
 <!-- Page 20 -->
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.70 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.70 -->
 <!-- PDF_REF: page=20 -->
 | Items | Special privileges |
 |---|---|
@@ -857,7 +857,7 @@ HSBC Jade brings you full fee waivers or preferential offers for selected produc
 
 HSBC Premier brings you full fee waivers or preferential offer of up to 50% off on selected banking services.
 
-<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
 <!-- PDF_REF:  -->
 | Items | Special privileges |
 |---|---|
