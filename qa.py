@@ -44,7 +44,8 @@ OUTPUT_DIR      = BASE / "hsbc_output"
 ANNOTATED_PATH  = OUTPUT_DIR / "hsbc_annotated.md"   # NEW: annotated markdown
 CONTEXT_PATH    = ANNOTATED_PATH                      # read annotated markdown
 REPORT_PATH     = OUTPUT_DIR / "verification" / "annotated_report.json"
-PAGE_IMAGES_DIR = OUTPUT_DIR / "verification" / "page_images"
+# FIX: Use the actual absolute path where page images are stored
+PAGE_IMAGES_DIR = Path("/Users/goodtam8/Documents/Programming/QA-For-table-and-graph/hsbc_output/verification/page_images")
 
 
 # ── Data structures ────────────────────────────────────────────────────────────
@@ -96,32 +97,6 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
     tables: list[AnnotatedTable] = []
     table_index = 0
 
-    # Pattern to match a block: tags followed by a GFM table
-    # Matches from the first VERIFY tag through the table
-    BLOCK_RE = re.compile(
-        r"""
-        (?P<tags>
-            <!--\s*VERIFY:\s*(?P<label>CORRECT|INCORRECT|REVIEW)\s*
-            (?:
-                \|\s*reason=(?P<reasons>[^|\s]+(?:\s+[^|\s]+)*)
-                |
-                \|\s*confidence=(?P<confidence>[\d.]+)
-            )*\s*-->
-            \s*
-            <!--\s*PDF_REF:\s*
-            (?P<pdf_ref>[^>]*?)
-            -->\s*
-        )?
-        (?P<table>
-            \|[^\n]*\|[\r\n]+
-            (?:\|[\s\-:|]+\|[\r\n]+)?
-            (?:\|[^\n]*\|[\r\n]*)*
-        )
-        """,
-        re.VERBOSE | re.MULTILINE,
-    )
-
-    # Simple fallback: just find all VERIFY tags and their following tables
     VERIFY_RE = re.compile(
         r"<!--\s*VERIFY:\s*(CORRECT|INCORRECT|REVIEW)\s*"
         r"(?:\|[^>]*?confidence=([\d.]+)[^>]*?)?"
@@ -134,16 +109,8 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
         re.IGNORECASE,
     )
 
-    # Split by tables
-    TABLE_SPLIT_RE = re.compile(
-        r"(?=^\|[\s\S]*?\|[\r\n]+)",
-        re.MULTILINE,
-    )
-
-    # Split the markdown into potential table blocks
     lines = markdown.split("\n")
     in_table = False
-    current_block_lines: list[str] = []
     current_verify_tag: str | None = None
     current_pdf_ref_tag: str | None = None
     current_table_lines: list[str] = []
@@ -152,10 +119,8 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
     for line in lines:
         stripped = line.strip()
 
-        # Check for VERIFY tag
         verify_m = VERIFY_RE.search(line)
         if verify_m:
-            # Flush previous block
             if current_table_lines:
                 blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
             current_verify_tag = verify_m.group(0)
@@ -164,23 +129,18 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
             in_table = False
             continue
 
-        # Check for PDF_REF tag
         pdf_ref_m = PDF_REF_RE.search(line)
         if pdf_ref_m:
             current_pdf_ref_tag = pdf_ref_m.group(0)
             continue
 
-        # Check if this is a table row
         is_table = stripped.startswith("|") and stripped.endswith("|")
         is_delimiter = bool(re.match(r"^\|[\s\-:|]+\|\s*$", stripped))
 
         if is_table or is_delimiter:
             if not in_table:
-                # Flush previous non-table block
                 if current_table_lines:
                     blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
-                current_verify_tag = current_verify_tag
-                current_pdf_ref_tag = current_pdf_ref_tag
                 current_table_lines = []
                 in_table = True
             current_table_lines.append(line)
@@ -193,11 +153,9 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
             in_table = False
             current_table_lines = []
 
-    # Flush last block
     if current_table_lines:
         blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
 
-    # Parse each block
     for verify_tag, pdf_ref_tag, table_lines in blocks:
         if not table_lines:
             continue
@@ -247,12 +205,10 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
 def load_annotated_markdown() -> tuple[str, list[AnnotatedTable]]:
     """Load the annotated markdown and parse its table tags."""
     if not ANNOTATED_PATH.exists():
-        # Fall back to plain markdown if annotated version doesn't exist
         plain = BASE / "hsbc.md"
         if plain.exists():
             text = plain.read_text(encoding="utf-8")
             tables = []
-            # No tags → all tables treated as UNKNOWN (flagged for safety)
             for i, tbl in enumerate(_extract_tables_from_markdown(text)):
                 tables.append(AnnotatedTable(
                     table_index=i,
@@ -305,36 +261,72 @@ def _extract_tables_from_markdown(markdown: str) -> list[str]:
 def find_page_images(pages: list[int]) -> list[Path]:
     """
     Return Path objects for page image files matching the given page numbers.
-    Supports naming conventions: page_001.png, page_002.jpg, etc.
+
+    FIX: Always uses the absolute PAGE_IMAGES_DIR path, then also tries
+    the project-relative path as a fallback. Supports naming conventions:
+    page_001.png, page_002.jpg, page_1.png, etc.
     """
-    if not PAGE_IMAGES_DIR.exists():
-        return []
+    results: list[Path] = []
 
-    images: list[Path] = []
-    for page in pages:
-        for pattern in [
-            f"page_{page:03d}.png",
-            f"page_{page:03d}.jpg",
-            f"page_{page}.png",
-            f"page_{page}.jpg",
-        ]:
-            p = PAGE_IMAGES_DIR / pattern
-            if p.exists():
-                images.append(p)
-                break
-        else:
-            globs = list(PAGE_IMAGES_DIR.glob(f"*page*{page}*"))
-            if globs:
-                images.append(sorted(globs)[0])
+    # Candidate directories: absolute path first, then relative fallback
+    candidate_dirs: list[Path] = [PAGE_IMAGES_DIR]
+    relative_dir = OUTPUT_DIR / "verification" / "page_images"
+    if relative_dir != PAGE_IMAGES_DIR and relative_dir.exists():
+        candidate_dirs.append(relative_dir)
 
-    # Deduplicate
+    for search_dir in candidate_dirs:
+        if not search_dir.exists():
+            continue
+
+        images: list[Path] = []
+        for page in pages:
+            found = False
+            for pattern in [
+                f"page_{page:03d}.png",
+                f"page_{page:03d}.jpg",
+                f"page_{page:03d}.jpeg",
+                f"page_{page}.png",
+                f"page_{page}.jpg",
+                f"page_{page}.jpeg",
+            ]:
+                p = search_dir / pattern
+                if p.exists():
+                    images.append(p)
+                    found = True
+                    break
+
+            if not found:
+                # Glob fallback: any file containing the page number
+                globs = list(search_dir.glob(f"*page*{page}*"))
+                if not globs:
+                    # Try zero-padded glob
+                    globs = list(search_dir.glob(f"*{page:03d}*"))
+                if globs:
+                    images.append(sorted(globs)[0])
+
+        if images:
+            results = images
+            break  # Found images in this directory, stop searching
+
+    # Deduplicate while preserving order
     seen: set[Path] = set()
     unique: list[Path] = []
-    for img in images:
+    for img in results:
         if img not in seen:
             seen.add(img)
             unique.append(img)
     return unique
+
+
+def list_available_page_images() -> list[Path]:
+    """
+    List all page images available in PAGE_IMAGES_DIR.
+    Useful for debugging when a specific page is not found.
+    """
+    if not PAGE_IMAGES_DIR.exists():
+        return []
+    exts = {".png", ".jpg", ".jpeg"}
+    return sorted(p for p in PAGE_IMAGES_DIR.iterdir() if p.suffix.lower() in exts)
 
 
 # ── LLM answer ────────────────────────────────────────────────────────────────
@@ -379,26 +371,21 @@ def score_table_relevance(question: str, table: AnnotatedTable, full_markdown: s
 
     score = 0.0
 
-    # Section name match
     if table.section:
         sec_lower = table.section.lower()
         if any(kw in sec_lower for kw in q_keywords):
             score += 0.5
 
-    # PDF page number match (from question)
     page_hint = re.search(r"\b(?:page|p\.?)\s*(\d+)\b", q_lower)
     if page_hint and table.pdf_page:
         if int(page_hint.group(1)) == table.pdf_page:
             score += 0.6
 
-    # Content match in the table body
     body_lower = table.md_table_body.lower()
     for kw in q_keywords:
         if kw in body_lower:
             score += 0.1
 
-    # Table label (INCORRECT tables should still be found if relevant)
-    # but answered with images instead of direct answer
     return min(score, 1.0)
 
 
@@ -422,7 +409,8 @@ def answer(question: str) -> QAAnswer:
       1. Load annotated markdown + parse VERIFY tags
       2. Find tables relevant to the question
       3. Check each table's VERIFY label:
-         - CORRECT / REVIEW → answer directly from the annotated table content
+         - CORRECT  → answer directly from the annotated table content
+         - REVIEW   → answer directly but add a warning
          - INCORRECT / UNKNOWN → return page images from PDF_REF page numbers
       4. If no relevant table found → answer directly from full annotated markdown
 
@@ -447,20 +435,27 @@ def answer(question: str) -> QAAnswer:
     relevant = find_relevant_tables(question, annotated_tables, full_markdown)
 
     if relevant:
-        # Use the most relevant table
         table = relevant[0]
 
-        # ── 3a. CORRECT / REVIEW → answer directly ─────────────────────
-        if table.label in ("CORRECT", "REVIEW"):
-            warning = None
-            if table.label == "REVIEW":
-                reason_str = ", ".join(table.error_reasons) if table.error_reasons else "uncertain_verification"
-                warning = (
-                    f"⚠️  This table has REVIEW status (confidence={table.confidence:.2f}). "
-                    f"Reason: {reason_str}. "
-                    f"Answer is provided but may need verification."
-                )
+        # ── 3a. CORRECT → answer directly ─────────────────────────────────
+        if table.label == "CORRECT":
+            llm_answer = answerdirectly(question, table.md_table_body)
+            return QAAnswer(
+                status="answered",
+                answer=llm_answer,
+                images=[],
+                warning=None,
+                table_verdict=table,
+            )
 
+        # ── 3b. REVIEW → answer with warning ──────────────────────────────
+        if table.label == "REVIEW":
+            reason_str = ", ".join(table.error_reasons) if table.error_reasons else "uncertain_verification"
+            warning = (
+                f"⚠️  This table has REVIEW status (confidence={table.confidence:.2f}). "
+                f"Reason: {reason_str}. "
+                f"Answer is provided but may need verification."
+            )
             llm_answer = answerdirectly(question, table.md_table_body)
             return QAAnswer(
                 status="answered",
@@ -470,24 +465,41 @@ def answer(question: str) -> QAAnswer:
                 table_verdict=table,
             )
 
-        # ── 3b. INCORRECT / UNKNOWN → return page images ───────────────
+        # ── 3c. INCORRECT / UNKNOWN → return page images ──────────────────
         page_images: list[Path] = []
-        if table.pdf_page:
+        if table.pdf_page is not None:
             page_images = find_page_images([table.pdf_page])
+
+        # FIX: If no image found via pdf_page, warn the user with diagnostics
+        image_debug = ""
+        if not page_images:
+            available = list_available_page_images()
+            if available:
+                available_str = ", ".join(p.name for p in available[:10])
+                image_debug = (
+                    f" (Note: No image found for page {table.pdf_page}. "
+                    f"Available images: {available_str})"
+                )
+            else:
+                image_debug = (
+                    f" (Note: Page images directory is empty or not found at: {PAGE_IMAGES_DIR})"
+                )
 
         reason_str = ", ".join(table.error_reasons) if table.error_reasons else "verification_failed"
         warning = (
-            f"⚠️  The relevant table was verified as INCORRECT (confidence={table.confidence:.2f}). "
+            f"⚠️  The relevant table was verified as {table.label} "
+            f"(confidence={table.confidence:.2f}). "
             f"Reason: {reason_str}. "
             f"The answer cannot be provided from the markdown as it may contain errors. "
-            f"Please consult the original page image(s) below."
+            f"Please consult the original page image(s) below.{image_debug}"
         )
 
         return QAAnswer(
             status="flagged",
             answer=(
                 f"I cannot provide a reliable answer for this question because the relevant "
-                f"section was verified as INCORRECT (reason: {reason_str}, confidence={table.confidence:.2f}). "
+                f"section was verified as {table.label} "
+                f"(reason: {reason_str}, confidence={table.confidence:.2f}). "
                 f"Please refer to the original page image(s) for the accurate information."
             ),
             images=page_images,
@@ -496,7 +508,6 @@ def answer(question: str) -> QAAnswer:
         )
 
     # ── 4. No relevant table found → answer from full markdown ──────────────
-    # (This handles non-table questions, section text, etc.)
     llm_answer = answerdirectly(question, full_markdown)
     return QAAnswer(
         status="answered",
@@ -520,6 +531,24 @@ def _print_result(result: QAAnswer) -> None:
         print("Relevant page image(s) (verified INCORRECT — consult for accuracy):")
         for img in result.images:
             print(f"  {img}")
+        print()
+    elif result.status == "flagged":
+        # FIX: Tell user explicitly that no images were found instead of silent failure
+        print()
+        print("⚠️  No page images were found to display.")
+        print(f"  Expected image directory: {PAGE_IMAGES_DIR}")
+        if PAGE_IMAGES_DIR.exists():
+            all_imgs = list_available_page_images()
+            if all_imgs:
+                print(f"  Available images ({len(all_imgs)} total):")
+                for img in all_imgs[:5]:
+                    print(f"    {img.name}")
+                if len(all_imgs) > 5:
+                    print(f"    ... and {len(all_imgs) - 5} more")
+            else:
+                print("  Directory exists but contains no image files.")
+        else:
+            print("  Directory does not exist. Run the parser/verifier pipeline first.")
         print()
     if result.table_verdict:
         print(f"[Table {result.table_verdict.table_index + 1}] "
