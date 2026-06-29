@@ -858,7 +858,7 @@ HSBC Jade brings you full fee waivers or preferential offers for selected produc
 HSBC Premier brings you full fee waivers or preferential offer of up to 50% off on selected banking services.
 
 <!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=20 -->
 | Items | Special privileges |
 |---|---|
 | 1. Integrated account services<br>Below balance fee<sup>1</sup><br>(based on average Total Relationship Balance over the last three months<sup>2</sup>)<br>For HSBC Premier customer with a Total Relationship Balance of<br>• HK$1,000,000 and above<br>• Below HK$1,000,000 | Waived<br>HK$380 per month |

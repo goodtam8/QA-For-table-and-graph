@@ -93,6 +93,8 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
         <!-- VERIFY: CORRECT | confidence=0.94 -->
         <!-- VERIFY: INCORRECT | reason=cell_boundary_bleed | confidence=0.61 -->
         <!-- PDF_REF: page=5, section="Section C: Fees and Charges" -->
+
+    FIX: Now looks backward from each table for section headings.
     """
     tables: list[AnnotatedTable] = []
     table_index = 0
@@ -108,21 +110,26 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
         r'<!--\s*PDF_REF:\s*page=(\d+)(?:,\s*section="([^"]*)")?\s*-->',
         re.IGNORECASE,
     )
+    # Pattern to match markdown section headings
+    HEADING_RE = re.compile(r"^#{1,6}\s+(.+)$", re.MULTILINE)
+    # Pattern to match page markers
+    PAGE_RE = re.compile(r"<!--\s*[Pp]age\s*(\d+)\s*-->", re.IGNORECASE)
 
     lines = markdown.split("\n")
     in_table = False
     current_verify_tag: str | None = None
     current_pdf_ref_tag: str | None = None
     current_table_lines: list[str] = []
-    blocks: list[tuple[str | None, str | None, list[str]]] = []
+    current_table_start_idx = 0
+    blocks: list[tuple[str | None, str | None, list[str], int]] = []
 
-    for line in lines:
+    for i, line in enumerate(lines):
         stripped = line.strip()
 
         verify_m = VERIFY_RE.search(line)
         if verify_m:
             if current_table_lines:
-                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
+                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
             current_verify_tag = verify_m.group(0)
             current_pdf_ref_tag = None
             current_table_lines = []
@@ -140,13 +147,14 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
         if is_table or is_delimiter:
             if not in_table:
                 if current_table_lines:
-                    blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
+                    blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
                 current_table_lines = []
                 in_table = True
+                current_table_start_idx = i
             current_table_lines.append(line)
         else:
             if in_table and current_table_lines:
-                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
+                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
                 current_verify_tag = None
                 current_pdf_ref_tag = None
                 current_table_lines = []
@@ -154,9 +162,9 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
             current_table_lines = []
 
     if current_table_lines:
-        blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
+        blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
 
-    for verify_tag, pdf_ref_tag, table_lines in blocks:
+    for verify_tag, pdf_ref_tag, table_lines, table_start_idx in blocks:
         if not table_lines:
             continue
 
@@ -181,6 +189,16 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
             if pm:
                 pdf_page = int(pm.group(1))
                 section = pm.group(2)
+
+        # FIX: Look backward from table position for section heading
+        # This handles cases where section headings appear BEFORE tables in the markdown
+        if section is None:
+            before_text = "\n".join(lines[:table_start_idx])
+            heading_matches = list(HEADING_RE.finditer(before_text))
+            if heading_matches:
+                # Use the last (most recent) section heading before this table
+                last_heading = heading_matches[-1]
+                section = last_heading.group(1).strip()
 
         raw = "\n".join(table_lines)
         md_body = "\n".join(table_lines)
@@ -362,41 +380,130 @@ def answerdirectly(question: str, context: str) -> str:
 
 # ── Table relevance scoring ─────────────────────────────────────────────────────
 
+# Minimum score thresholds
+MIN_SCORE_FOR_RELEVANCE = 0.5  # Tables below this are considered irrelevant
+
+# Account types that need specific matching
+ACCOUNT_TYPES = ["jade", "premier", "advance", "one"]
+
+
+def _extract_account_type(text: str) -> str | None:
+    """Extract the primary account type from text (e.g., section heading, question)."""
+    text_lower = text.lower()
+    for account in ACCOUNT_TYPES:
+        if account in text_lower:
+            return account
+    return None
+
+
 def score_table_relevance(question: str, table: AnnotatedTable, full_markdown: str) -> float:
     """
     Score how relevant a table is to a user question (0.0 = irrelevant, 1.0 = highly relevant).
+    
+    Uses a multi-factor scoring approach with STRICT matching:
+    1. Section title matching (HIGHEST weight) - must match account type
+    2. Table structure detection (privilege vs fee tables)
+    3. Account type specificity in table content
+    4. Penalty for generic/table-of-contents tables
     """
     q_lower = question.lower()
-    q_keywords = set(re.findall(r"[a-z]{3,}", q_lower))
-
+    
+    # Extract account type from question (e.g., "jade", "premier")
+    q_account_type = _extract_account_type(question)
+    
+    # Check for privilege-related keywords
+    q_about_privilege = any(kw in q_lower for kw in ["privilege", "privileges", "benefit", "benefits", "waiver", "special"])
+    
     score = 0.0
-
+    
+    # 1. Section title matching - MOST IMPORTANT
     if table.section:
         sec_lower = table.section.lower()
-        if any(kw in sec_lower for kw in q_keywords):
-            score += 0.5
-
+        section_account_type = _extract_account_type(table.section)
+        section_is_privilege = "privilege" in sec_lower
+        
+        # Direct account type match in section (highest priority)
+        if q_account_type and section_account_type:
+            if q_account_type == section_account_type:
+                # Perfect match: question asks about X, section is about X privileges
+                if section_is_privilege and q_about_privilege:
+                    score = 1.0  # Maximum score for exact match
+                else:
+                    score = 0.7  # High score for same account type
+            else:
+                # Mismatch: question asks about X, section is about Y
+                # Only give partial score if asking about privileges in general
+                if q_about_privilege and section_is_privilege:
+                    score = 0.3  # Low score - different account type
+                elif q_about_privilege:
+                    score = 0.2  # Very low - different account
+                # else: score stays 0
+        
+        # Fallback: section has privilege but no specific account type
+        elif section_is_privilege and q_about_privilege:
+            score = 0.4  # Moderate score for privilege section with no specific account
+    
+    # 2. Table structure detection
+    header_lower = table.md_table_body.lower().split('\n')[0] if table.md_table_body else ""
+    body_lower = table.md_table_body.lower()
+    
+    is_privilege_table = "special privileges" in body_lower[:500] or ("items" in header_lower and "special" in header_lower)
+    is_contents_table = "page" in header_lower and "|" in header_lower and header_lower.count("|") <= 4
+    
+    # 3. Account type specificity in table body
+    if q_account_type:
+        body_account_type = _extract_account_type(body_lower[:1000])  # Check first 1000 chars
+        if body_account_type == q_account_type:
+            if is_privilege_table:
+                score += 0.3  # Boost for matching account type in privilege table
+        elif body_account_type:
+            # Different account type in table
+            if is_privilege_table and q_about_privilege:
+                score -= 0.2  # Penalize - wrong account type
+    
+    # 4. Privilege table bonus
+    if is_privilege_table and q_about_privilege and q_account_type:
+        # Only boost if we haven't already scored high
+        if score < 0.8:
+            score = min(score + 0.3, 0.9)
+    
+    # 5. Penalty for table of contents
+    if is_contents_table:
+        score -= 0.5
+        # Unless it specifically mentions the queried account type
+        if q_account_type and q_account_type in body_lower[:500]:
+            score += 0.3
+    
+    # 6. Penalty for fee comparison tables (5+ columns) when asking about privileges
+    first_line = table.md_table_body.split('\n')[0] if table.md_table_body else ""
+    col_count = first_line.count('|') - 1
+    is_fee_table = col_count >= 5
+    
+    if is_fee_table and q_about_privilege:
+        score -= 0.3
+    
+    # 7. Page number hint
     page_hint = re.search(r"\b(?:page|p\.?)\s*(\d+)\b", q_lower)
     if page_hint and table.pdf_page:
         if int(page_hint.group(1)) == table.pdf_page:
-            score += 0.6
-
-    body_lower = table.md_table_body.lower()
-    for kw in q_keywords:
-        if kw in body_lower:
-            score += 0.1
-
-    return min(score, 1.0)
+            score += 0.3
+    
+    return max(0.0, min(score, 1.0))
 
 
 def find_relevant_tables(question: str, tables: list[AnnotatedTable], full_markdown: str) -> list[AnnotatedTable]:
-    """Return tables relevant to the question, sorted by relevance score descending."""
+    """
+    Return tables relevant to the question, sorted by relevance score descending.
+    
+    Only returns tables with a relevance score >= MIN_SCORE_FOR_RELEVANCE.
+    """
     scored = [
         (score_table_relevance(question, tbl, full_markdown), tbl)
         for tbl in tables
     ]
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [tbl for score, tbl in scored if score > 0]
+    # Filter by minimum threshold
+    return [tbl for score, tbl in scored if score >= MIN_SCORE_FOR_RELEVANCE]
 
 
 # ── Main QA logic ─────────────────────────────────────────────────────────────
@@ -435,49 +542,89 @@ def answer(question: str) -> QAAnswer:
     relevant = find_relevant_tables(question, annotated_tables, full_markdown)
 
     if relevant:
-        table = relevant[0]
-
+        # Group relevant tables by their status
+        correct_tables = [t for t in relevant if t.label == "CORRECT"]
+        review_tables = [t for t in relevant if t.label == "REVIEW"]
+        incorrect_tables = [t for t in relevant if t.label in ("INCORRECT", "UNKNOWN")]
+        
+        # Priority: CORRECT tables first, then REVIEW, then INCORRECT/UNKNOWN
+        primary_table = None
+        if correct_tables:
+            primary_table = correct_tables[0]
+        elif review_tables:
+            primary_table = review_tables[0]
+        elif incorrect_tables:
+            primary_table = incorrect_tables[0]
+        
+        if primary_table is None:
+            primary_table = relevant[0]
+        
         # ── 3a. CORRECT → answer directly ─────────────────────────────────
-        if table.label == "CORRECT":
-            llm_answer = answerdirectly(question, table.md_table_body)
+        if primary_table.label == "CORRECT":
+            llm_answer = answerdirectly(question, primary_table.md_table_body)
+            
+            # Check if there are other relevant INCORRECT tables for the same topic
+            # If so, add a note about them
+            if incorrect_tables:
+                incorrect_pages = [t.pdf_page for t in incorrect_tables if t.pdf_page is not None]
+                if incorrect_pages:
+                    note = (
+                        f"\n\nNote: While the primary relevant table (Section: {primary_table.section or 'N/A'}) "
+                        f"is verified as CORRECT, there are {len(incorrect_tables)} other related table(s) "
+                        f"on page(s) {incorrect_pages} that have INCORRECT status. "
+                        f"The markdown content for those sections may contain errors."
+                    )
+                    llm_answer += note
+            
             return QAAnswer(
                 status="answered",
                 answer=llm_answer,
                 images=[],
                 warning=None,
-                table_verdict=table,
+                table_verdict=primary_table,
             )
 
         # ── 3b. REVIEW → answer with warning ──────────────────────────────
-        if table.label == "REVIEW":
-            reason_str = ", ".join(table.error_reasons) if table.error_reasons else "uncertain_verification"
+        if primary_table.label == "REVIEW":
+            reason_str = ", ".join(primary_table.error_reasons) if primary_table.error_reasons else "uncertain_verification"
             warning = (
-                f"⚠️  This table has REVIEW status (confidence={table.confidence:.2f}). "
+                f"⚠️  This table has REVIEW status (confidence={primary_table.confidence:.2f}). "
                 f"Reason: {reason_str}. "
                 f"Answer is provided but may need verification."
             )
-            llm_answer = answerdirectly(question, table.md_table_body)
+            llm_answer = answerdirectly(question, primary_table.md_table_body)
             return QAAnswer(
                 status="answered",
                 answer=llm_answer,
                 images=[],
                 warning=warning,
-                table_verdict=table,
+                table_verdict=primary_table,
             )
 
         # ── 3c. INCORRECT / UNKNOWN → return page images ──────────────────
-        page_images: list[Path] = []
-        if table.pdf_page is not None:
-            page_images = find_page_images([table.pdf_page])
-
-        # FIX: If no image found via pdf_page, warn the user with diagnostics
+        # Collect page images for ALL relevant INCORRECT tables
+        all_pages_to_fetch: list[int] = []
+        for tbl in incorrect_tables:
+            if tbl.pdf_page is not None and tbl.pdf_page not in all_pages_to_fetch:
+                all_pages_to_fetch.append(tbl.pdf_page)
+        
+        # If no incorrect tables but we have REVIEW tables as fallback
+        if not all_pages_to_fetch and review_tables:
+            for tbl in review_tables:
+                if tbl.pdf_page is not None and tbl.pdf_page not in all_pages_to_fetch:
+                    all_pages_to_fetch.append(tbl.pdf_page)
+        
+        # Fetch page images
+        page_images = find_page_images(all_pages_to_fetch) if all_pages_to_fetch else []
+        
+        # If no image found via pdf_page, warn the user with diagnostics
         image_debug = ""
-        if not page_images:
+        if not page_images and all_pages_to_fetch:
             available = list_available_page_images()
             if available:
                 available_str = ", ".join(p.name for p in available[:10])
                 image_debug = (
-                    f" (Note: No image found for page {table.pdf_page}. "
+                    f" (Note: No image found for page(s) {all_pages_to_fetch}. "
                     f"Available images: {available_str})"
                 )
             else:
@@ -485,26 +632,53 @@ def answer(question: str) -> QAAnswer:
                     f" (Note: Page images directory is empty or not found at: {PAGE_IMAGES_DIR})"
                 )
 
-        reason_str = ", ".join(table.error_reasons) if table.error_reasons else "verification_failed"
+        reason_str = ", ".join(primary_table.error_reasons) if primary_table.error_reasons else "verification_failed"
+        
+        # Build comprehensive warning message
+        warning_tables_info = ""
+        if len(incorrect_tables) > 1:
+            warning_tables_info = (
+                f"\n  - {len(incorrect_tables)} INCORRECT table(s) found for this query:"
+            )
+            for i, tbl in enumerate(incorrect_tables[:5]):  # Show first 5
+                warning_tables_info += f"\n    {i+1}. Section: {tbl.section or 'N/A'}, Page: {tbl.pdf_page or 'N/A'}, Confidence: {tbl.confidence:.2f}"
+            if len(incorrect_tables) > 5:
+                warning_tables_info += f"\n    ... and {len(incorrect_tables) - 5} more table(s)"
+        
         warning = (
-            f"⚠️  The relevant table was verified as {table.label} "
-            f"(confidence={table.confidence:.2f}). "
+            f"⚠️  The relevant table(s) were verified as INCORRECT "
+            f"(confidence={primary_table.confidence:.2f}). "
             f"Reason: {reason_str}. "
             f"The answer cannot be provided from the markdown as it may contain errors. "
             f"Please consult the original page image(s) below.{image_debug}"
+            f"{warning_tables_info}"
         )
+
+        # Build answer message mentioning all relevant pages
+        pages_info = ""
+        if all_pages_to_fetch:
+            pages_info = f" Page(s): {all_pages_to_fetch}"
+        
+        answer_text = (
+            f"I cannot provide a reliable answer for this question because the relevant "
+            f"section was verified as INCORRECT "
+            f"(reason: {reason_str}, confidence={primary_table.confidence:.2f}).{pages_info} "
+            f"Please refer to the original page image(s) for the accurate information."
+        )
+        
+        # If there are CORRECT tables that could also help answer this question, mention them
+        if correct_tables:
+            answer_text += (
+                f"\n\nHowever, I found {len(correct_tables)} CORRECT table(s) that may also "
+                f"contain relevant information for your query."
+            )
 
         return QAAnswer(
             status="flagged",
-            answer=(
-                f"I cannot provide a reliable answer for this question because the relevant "
-                f"section was verified as {table.label} "
-                f"(reason: {reason_str}, confidence={table.confidence:.2f}). "
-                f"Please refer to the original page image(s) for the accurate information."
-            ),
+            answer=answer_text,
             images=page_images,
             warning=warning,
-            table_verdict=table,
+            table_verdict=primary_table,
         )
 
     # ── 4. No relevant table found → answer from full markdown ──────────────

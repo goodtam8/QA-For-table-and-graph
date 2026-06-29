@@ -376,10 +376,23 @@ class MarkdownAnnotator:
         def replace_table_block(m: re.Match) -> str:
             preamble = m.group("preamble") or ""
             raw_table = m.group("table")
+            table_start_pos = m.start()
+            table_end_pos = m.end()
 
-            # Extract page number from preamble
+            # Extract page number from preamble (standard forward-looking)
             page_marker = re.search(r"<!--\s*[Pp]age\s*(\d+)\s*-->", preamble)
             page_hint = int(page_marker.group(1)) if page_marker else None
+
+            # FIX: Look backward from table position for page marker if not found in preamble
+            # This handles cases where page markers appear AFTER tables in the markdown
+            if page_hint is None:
+                # Look at text before this table for the nearest page marker
+                before_text = text[:table_start_pos]
+                backward_page_matches = list(re.finditer(r"<!--\s*[Pp]age\s*(\d+)\s*-->", before_text))
+                if backward_page_matches:
+                    # Use the last (most recent) page marker before this table
+                    last_match = backward_page_matches[-1]
+                    page_hint = int(last_match.group(1))
 
             # Extract section from preamble
             section_lines = re.findall(r"^#{1,6}\s+(.+)$", preamble, re.MULTILINE)
@@ -500,9 +513,18 @@ class MarkdownAnnotator:
         def replace_table_block(m: re.Match) -> str:
             preamble = m.group("preamble") or ""
             raw_table = m.group("table")
+            table_start_pos = m.start()
 
             page_marker = re.search(r"<!--\s*[Pp]age\s*(\d+)\s*-->", preamble)
             page_hint = int(page_marker.group(1)) if page_marker else None
+
+            # FIX: Look backward from table position for page marker if not found in preamble
+            if page_hint is None:
+                before_text = text[:table_start_pos]
+                backward_page_matches = list(re.finditer(r"<!--\s*[Pp]age\s*(\d+)\s*-->", before_text))
+                if backward_page_matches:
+                    last_match = backward_page_matches[-1]
+                    page_hint = int(last_match.group(1))
 
             section_lines = re.findall(r"^#{1,6}\s+(.+)$", preamble, re.MULTILINE)
             section = section_lines[-1].strip() if section_lines else None
