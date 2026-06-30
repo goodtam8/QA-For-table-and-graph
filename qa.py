@@ -420,7 +420,13 @@ def _ensure_table_embeddings(tables: list[AnnotatedTable]) -> None:
     _table_indices = [table.table_index for table in tables]
     for table in tables:
         if table.table_index not in _embedding_cache:
-            text = f"{table.section or ''}\n{table.md_table_body}"
+            # Extract meaningful row content from the markdown table body
+            body_lines = table.md_table_body.splitlines()
+            # Skip header and separator rows, include actual data rows
+            content_lines = [line for line in body_lines if line.strip() and not re.match(r'^\|[\s\-:|]+\|\s*$', line.strip())]
+            # Take first 10 content rows to capture topics without too much noise
+            sample_content = '\n'.join(content_lines[:10]) if content_lines else table.md_table_body
+            text = f"{table.section or ''}\n{sample_content}"
             _embedding_cache[table.table_index] = embed(text)
 
     _embedding_ready = True
@@ -603,10 +609,17 @@ def answer(question: str) -> QAAnswer:
                 )
 
             llm_answer = answerdirectly(question, table.md_table_body)
+
+            # When skipping an INCORRECT table, also return its page image
+            images: list[Path] = []
+            if best_unverified_table and (best_unverified_score - best_verified_score) > 0.05:
+                if best_unverified_table.pdf_page:
+                    images = find_page_images([best_unverified_table.pdf_page])
+
             return QAAnswer(
                 status="answered",
                 answer=llm_answer,
-                images=[],
+                images=images,
                 warning=semantic_gap_warning,
                 table_verdict=table,
             )
