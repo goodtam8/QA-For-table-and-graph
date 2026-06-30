@@ -316,6 +316,41 @@ class MarkdownAnnotator:
         Optional LLM client for ambiguous table verification.
     """
 
+    # ── Page-source helpers ─────────────────────────────────────────────────────
+
+    def _load_table_bboxes(self) -> list[dict]:
+        """Load table_bboxes.json if it exists, return [] otherwise."""
+        # Always use a path relative to the script location.
+        bbox_path = Path(__file__).parent.parent / "hsbc_output" / "verification" / "table_bboxes.json"
+        if bbox_path.exists():
+            with open(bbox_path, encoding="utf-8") as f:
+                return json.load(f)
+        return []
+
+    def _find_page_marker_backward(self, text: str, table_start: int) -> int | None:
+        """
+        Search backward from table_start for the last <!-- Page N --> marker.
+        Uses m.start('table') (actual table start) not m.start() (preamble start),
+        so next-page-marker-in-preamble does NOT leak into the backward search.
+        """
+        before = text[:table_start]
+        matches = list(re.finditer(r"<!--\s*[Pp]age\s*(\d+)\s*-->", before))
+        return int(matches[-1].group(1)) if matches else None
+
+    def _pdf_page_from_bboxes(self, bboxes: list[dict], table_index: int) -> int | None:
+        """
+        Return 1-based PDF page number for a table_index using table_bboxes.json.
+        table_bboxes entries are in markdown table order. page_index is 0-based in
+        the JSON, so we add 1 to get the PDF page number.
+        """
+        if 0 <= table_index < len(bboxes):
+            pdf_idx = bboxes[table_index].get("page_index")
+            if pdf_idx is not None:
+                return int(pdf_idx) + 1
+        return None
+
+    # ── Main annotator ─────────────────────────────────────────────────────────
+
     TABLE_BLOCK_RE = re.compile(
         r"""
         (?P<preamble>
@@ -373,26 +408,31 @@ class MarkdownAnnotator:
         self._verifications = []
         text = markdown_text.replace("\r\n", "\n").replace("\r", "\n")
 
+        # Load table_bboxes.json for authoritative PDF page mapping.
+        # Entries are in markdown table order; page_index is 0-based.
+        table_bboxes = self._load_table_bboxes()
+
+        # Block counter for table_bboxes alignment (table.table_index from
+        # MarkdownTableParser is always 0 when parsing isolated table text,
+        # so we need to count blocks in document order ourselves).
+        block_idx = [0]
+
         def replace_table_block(m: re.Match) -> str:
             preamble = m.group("preamble") or ""
             raw_table = m.group("table")
-            table_start_pos = m.start()
-            table_end_pos = m.end()
+            # m.start("table") points to the actual table start (after preamble),
+            # whereas m.start() points to the preamble start — which may include
+            # the next page marker that leaked in via greedy preamble matching.
+            # Use m.start("table") for backward page search to avoid that bleed.
+            table_actual_start = m.start("table")
 
-            # Extract page number from preamble (standard forward-looking)
+            # Forward-looking: page marker inside this table's own preamble
             page_marker = re.search(r"<!--\s*[Pp]age\s*(\d+)\s*-->", preamble)
             page_hint = int(page_marker.group(1)) if page_marker else None
 
-            # FIX: Look backward from table position for page marker if not found in preamble
-            # This handles cases where page markers appear AFTER tables in the markdown
+            # Backward search from the actual table position (not preamble start)
             if page_hint is None:
-                # Look at text before this table for the nearest page marker
-                before_text = text[:table_start_pos]
-                backward_page_matches = list(re.finditer(r"<!--\s*[Pp]age\s*(\d+)\s*-->", before_text))
-                if backward_page_matches:
-                    # Use the last (most recent) page marker before this table
-                    last_match = backward_page_matches[-1]
-                    page_hint = int(last_match.group(1))
+                page_hint = self._find_page_marker_backward(text, table_actual_start)
 
             # Extract section from preamble
             section_lines = re.findall(r"^#{1,6}\s+(.+)$", preamble, re.MULTILINE)
@@ -409,7 +449,13 @@ class MarkdownAnnotator:
             table = tables[0]
 
             # Get PDF page hint from the map if provided
-            actual_page = pdf_page_map.get(table.table_index, page_hint) if pdf_page_map else page_hint
+            actual_page = pdf_page_map.get(block_idx[0], page_hint) if pdf_page_map else page_hint
+
+            # Fall back to table_bboxes.json when no page marker was found
+            if actual_page is None:
+                actual_page = self._pdf_page_from_bboxes(table_bboxes, block_idx[0])
+
+            block_idx[0] += 1
 
             # Get PDF table data
             pdf_cells, pdf_footnotes = get_pdf_table_for_md_table(
@@ -509,22 +555,19 @@ class MarkdownAnnotator:
 
         self._verifications = []
         text = markdown_text.replace("\r\n", "\n").replace("\r", "\n")
+        table_bboxes = self._load_table_bboxes()
+        block_idx = [0]
 
         def replace_table_block(m: re.Match) -> str:
             preamble = m.group("preamble") or ""
             raw_table = m.group("table")
-            table_start_pos = m.start()
+            table_actual_start = m.start("table")
 
             page_marker = re.search(r"<!--\s*[Pp]age\s*(\d+)\s*-->", preamble)
             page_hint = int(page_marker.group(1)) if page_marker else None
 
-            # FIX: Look backward from table position for page marker if not found in preamble
             if page_hint is None:
-                before_text = text[:table_start_pos]
-                backward_page_matches = list(re.finditer(r"<!--\s*[Pp]age\s*(\d+)\s*-->", before_text))
-                if backward_page_matches:
-                    last_match = backward_page_matches[-1]
-                    page_hint = int(last_match.group(1))
+                page_hint = self._find_page_marker_backward(text, table_actual_start)
 
             section_lines = re.findall(r"^#{1,6}\s+(.+)$", preamble, re.MULTILINE)
             section = section_lines[-1].strip() if section_lines else None
@@ -535,7 +578,13 @@ class MarkdownAnnotator:
                 return raw_table
 
             table = tables[0]
-            actual_page = pdf_page_map.get(table.table_index, page_hint) if pdf_page_map else page_hint
+            actual_page = pdf_page_map.get(block_idx[0], page_hint) if pdf_page_map else page_hint
+
+            # Fall back to table_bboxes.json when no page marker was found
+            if actual_page is None:
+                actual_page = self._pdf_page_from_bboxes(table_bboxes, block_idx[0])
+
+            block_idx[0] += 1
 
             pdf_cells, pdf_footnotes = get_pdf_table_for_md_table(
                 table, self.pdf_tables_by_page, actual_page

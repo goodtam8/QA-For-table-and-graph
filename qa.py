@@ -21,6 +21,7 @@ The annotated markdown format:
 
 from __future__ import annotations
 
+import math
 import os
 import re
 import json
@@ -37,6 +38,11 @@ client = AzureOpenAI(
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
 )
 
+_EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-small")
+_embedding_cache: dict[int, list[float]] = {}
+_embedding_ready = False
+_table_indices: list[int] = []
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
 BASE            = Path(__file__).parent
@@ -44,8 +50,7 @@ OUTPUT_DIR      = BASE / "hsbc_output"
 ANNOTATED_PATH  = OUTPUT_DIR / "hsbc_annotated.md"   # NEW: annotated markdown
 CONTEXT_PATH    = ANNOTATED_PATH                      # read annotated markdown
 REPORT_PATH     = OUTPUT_DIR / "verification" / "annotated_report.json"
-# FIX: Use the actual absolute path where page images are stored
-PAGE_IMAGES_DIR = Path("/Users/goodtam8/Documents/Programming/QA-For-table-and-graph/hsbc_output/verification/page_images")
+PAGE_IMAGES_DIR = OUTPUT_DIR / "verification" / "page_images"
 
 
 # ── Data structures ────────────────────────────────────────────────────────────
@@ -93,12 +98,36 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
         <!-- VERIFY: CORRECT | confidence=0.94 -->
         <!-- VERIFY: INCORRECT | reason=cell_boundary_bleed | confidence=0.61 -->
         <!-- PDF_REF: page=5, section="Section C: Fees and Charges" -->
-
-    FIX: Now looks backward from each table for section headings.
     """
     tables: list[AnnotatedTable] = []
     table_index = 0
 
+    # Pattern to match a block: tags followed by a GFM table
+    # Matches from the first VERIFY tag through the table
+    BLOCK_RE = re.compile(
+        r"""
+        (?P<tags>
+            <!--\s*VERIFY:\s*(?P<label>CORRECT|INCORRECT|REVIEW)\s*
+            (?:
+                \|\s*reason=(?P<reasons>[^|\s]+(?:\s+[^|\s]+)*)
+                |
+                \|\s*confidence=(?P<confidence>[\d.]+)
+            )*\s*-->
+            \s*
+            <!--\s*PDF_REF:\s*
+            (?P<pdf_ref>[^>]*?)
+            -->\s*
+        )?
+        (?P<table>
+            \|[^\n]*\|[\r\n]+
+            (?:\|[\s\-:|]+\|[\r\n]+)?
+            (?:\|[^\n]*\|[\r\n]*)*
+        )
+        """,
+        re.VERBOSE | re.MULTILINE,
+    )
+
+    # Simple fallback: just find all VERIFY tags and their following tables
     VERIFY_RE = re.compile(
         r"<!--\s*VERIFY:\s*(CORRECT|INCORRECT|REVIEW)\s*"
         r"(?:\|[^>]*?confidence=([\d.]+)[^>]*?)?"
@@ -110,61 +139,72 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
         r'<!--\s*PDF_REF:\s*page=(\d+)(?:,\s*section="([^"]*)")?\s*-->',
         re.IGNORECASE,
     )
-    # Pattern to match markdown section headings
-    HEADING_RE = re.compile(r"^#{1,6}\s+(.+)$", re.MULTILINE)
-    # Pattern to match page markers
-    PAGE_RE = re.compile(r"<!--\s*[Pp]age\s*(\d+)\s*-->", re.IGNORECASE)
 
+    # Split by tables
+    TABLE_SPLIT_RE = re.compile(
+        r"(?=^\|[\s\S]*?\|[\r\n]+)",
+        re.MULTILINE,
+    )
+
+    # Split the markdown into potential table blocks
     lines = markdown.split("\n")
     in_table = False
+    current_block_lines: list[str] = []
     current_verify_tag: str | None = None
     current_pdf_ref_tag: str | None = None
     current_table_lines: list[str] = []
-    current_table_start_idx = 0
-    blocks: list[tuple[str | None, str | None, list[str], int]] = []
+    blocks: list[tuple[str | None, str | None, list[str]]] = []
 
-    for i, line in enumerate(lines):
+    for line in lines:
         stripped = line.strip()
 
+        # Check for VERIFY tag
         verify_m = VERIFY_RE.search(line)
         if verify_m:
+            # Flush previous block
             if current_table_lines:
-                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
+                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
             current_verify_tag = verify_m.group(0)
             current_pdf_ref_tag = None
             current_table_lines = []
             in_table = False
             continue
 
+        # Check for PDF_REF tag
         pdf_ref_m = PDF_REF_RE.search(line)
         if pdf_ref_m:
             current_pdf_ref_tag = pdf_ref_m.group(0)
             continue
 
+        # Check if this is a table row
         is_table = stripped.startswith("|") and stripped.endswith("|")
         is_delimiter = bool(re.match(r"^\|[\s\-:|]+\|\s*$", stripped))
 
         if is_table or is_delimiter:
             if not in_table:
+                # Flush previous non-table block
                 if current_table_lines:
-                    blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
+                    blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
+                current_verify_tag = current_verify_tag
+                current_pdf_ref_tag = current_pdf_ref_tag
                 current_table_lines = []
                 in_table = True
-                current_table_start_idx = i
             current_table_lines.append(line)
         else:
             if in_table and current_table_lines:
-                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
+                blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
                 current_verify_tag = None
                 current_pdf_ref_tag = None
                 current_table_lines = []
             in_table = False
             current_table_lines = []
 
+    # Flush last block
     if current_table_lines:
-        blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines, current_table_start_idx))
+        blocks.append((current_verify_tag, current_pdf_ref_tag, current_table_lines))
 
-    for verify_tag, pdf_ref_tag, table_lines, table_start_idx in blocks:
+    # Parse each block
+    for verify_tag, pdf_ref_tag, table_lines in blocks:
         if not table_lines:
             continue
 
@@ -190,16 +230,6 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
                 pdf_page = int(pm.group(1))
                 section = pm.group(2)
 
-        # FIX: Look backward from table position for section heading
-        # This handles cases where section headings appear BEFORE tables in the markdown
-        if section is None:
-            before_text = "\n".join(lines[:table_start_idx])
-            heading_matches = list(HEADING_RE.finditer(before_text))
-            if heading_matches:
-                # Use the last (most recent) section heading before this table
-                last_heading = heading_matches[-1]
-                section = last_heading.group(1).strip()
-
         raw = "\n".join(table_lines)
         md_body = "\n".join(table_lines)
 
@@ -223,10 +253,12 @@ def parse_annotated_tables(markdown: str) -> list[AnnotatedTable]:
 def load_annotated_markdown() -> tuple[str, list[AnnotatedTable]]:
     """Load the annotated markdown and parse its table tags."""
     if not ANNOTATED_PATH.exists():
+        # Fall back to plain markdown if annotated version doesn't exist
         plain = BASE / "hsbc.md"
         if plain.exists():
             text = plain.read_text(encoding="utf-8")
             tables = []
+            # No tags → all tables treated as UNKNOWN (flagged for safety)
             for i, tbl in enumerate(_extract_tables_from_markdown(text)):
                 tables.append(AnnotatedTable(
                     table_index=i,
@@ -279,72 +311,36 @@ def _extract_tables_from_markdown(markdown: str) -> list[str]:
 def find_page_images(pages: list[int]) -> list[Path]:
     """
     Return Path objects for page image files matching the given page numbers.
-
-    FIX: Always uses the absolute PAGE_IMAGES_DIR path, then also tries
-    the project-relative path as a fallback. Supports naming conventions:
-    page_001.png, page_002.jpg, page_1.png, etc.
+    Supports naming conventions: page_001.png, page_002.jpg, etc.
     """
-    results: list[Path] = []
+    if not PAGE_IMAGES_DIR.exists():
+        return []
 
-    # Candidate directories: absolute path first, then relative fallback
-    candidate_dirs: list[Path] = [PAGE_IMAGES_DIR]
-    relative_dir = OUTPUT_DIR / "verification" / "page_images"
-    if relative_dir != PAGE_IMAGES_DIR and relative_dir.exists():
-        candidate_dirs.append(relative_dir)
+    images: list[Path] = []
+    for page in pages:
+        for pattern in [
+            f"page_{page:03d}.png",
+            f"page_{page:03d}.jpg",
+            f"page_{page}.png",
+            f"page_{page}.jpg",
+        ]:
+            p = PAGE_IMAGES_DIR / pattern
+            if p.exists():
+                images.append(p)
+                break
+        else:
+            globs = list(PAGE_IMAGES_DIR.glob(f"*page*{page}*"))
+            if globs:
+                images.append(sorted(globs)[0])
 
-    for search_dir in candidate_dirs:
-        if not search_dir.exists():
-            continue
-
-        images: list[Path] = []
-        for page in pages:
-            found = False
-            for pattern in [
-                f"page_{page:03d}.png",
-                f"page_{page:03d}.jpg",
-                f"page_{page:03d}.jpeg",
-                f"page_{page}.png",
-                f"page_{page}.jpg",
-                f"page_{page}.jpeg",
-            ]:
-                p = search_dir / pattern
-                if p.exists():
-                    images.append(p)
-                    found = True
-                    break
-
-            if not found:
-                # Glob fallback: any file containing the page number
-                globs = list(search_dir.glob(f"*page*{page}*"))
-                if not globs:
-                    # Try zero-padded glob
-                    globs = list(search_dir.glob(f"*{page:03d}*"))
-                if globs:
-                    images.append(sorted(globs)[0])
-
-        if images:
-            results = images
-            break  # Found images in this directory, stop searching
-
-    # Deduplicate while preserving order
+    # Deduplicate
     seen: set[Path] = set()
     unique: list[Path] = []
-    for img in results:
+    for img in images:
         if img not in seen:
             seen.add(img)
             unique.append(img)
     return unique
-
-
-def list_available_page_images() -> list[Path]:
-    """
-    List all page images available in PAGE_IMAGES_DIR.
-    Useful for debugging when a specific page is not found.
-    """
-    if not PAGE_IMAGES_DIR.exists():
-        return []
-    exts = {".png", ".jpg", ".jpeg"}
-    return sorted(p for p in PAGE_IMAGES_DIR.iterdir() if p.suffix.lower() in exts)
 
 
 # ── LLM answer ────────────────────────────────────────────────────────────────
@@ -380,130 +376,147 @@ def answerdirectly(question: str, context: str) -> str:
 
 # ── Table relevance scoring ─────────────────────────────────────────────────────
 
-# Minimum score thresholds
-MIN_SCORE_FOR_RELEVANCE = 0.5  # Tables below this are considered irrelevant
-
-# Account types that need specific matching
-ACCOUNT_TYPES = ["jade", "premier", "advance", "one"]
-
-
-def _extract_account_type(text: str) -> str | None:
-    """Extract the primary account type from text (e.g., section heading, question)."""
-    text_lower = text.lower()
-    for account in ACCOUNT_TYPES:
-        if account in text_lower:
-            return account
-    return None
-
-
-def score_table_relevance(question: str, table: AnnotatedTable, full_markdown: str) -> float:
+def embed(text: str) -> list[float]:
     """
-    Score how relevant a table is to a user question (0.0 = irrelevant, 1.0 = highly relevant).
-    
-    Uses a multi-factor scoring approach with STRICT matching:
-    1. Section title matching (HIGHEST weight) - must match account type
-    2. Table structure detection (privilege vs fee tables)
-    3. Account type specificity in table content
-    4. Penalty for generic/table-of-contents tables
+    Return an embedding vector for the provided text.
     """
-    q_lower = question.lower()
-    
-    # Extract account type from question (e.g., "jade", "premier")
-    q_account_type = _extract_account_type(question)
-    
-    # Check for privilege-related keywords
-    q_about_privilege = any(kw in q_lower for kw in ["privilege", "privileges", "benefit", "benefits", "waiver", "special"])
-    
-    score = 0.0
-    
-    # 1. Section title matching - MOST IMPORTANT
-    if table.section:
-        sec_lower = table.section.lower()
-        section_account_type = _extract_account_type(table.section)
-        section_is_privilege = "privilege" in sec_lower
-        
-        # Direct account type match in section (highest priority)
-        if q_account_type and section_account_type:
-            if q_account_type == section_account_type:
-                # Perfect match: question asks about X, section is about X privileges
-                if section_is_privilege and q_about_privilege:
-                    score = 1.0  # Maximum score for exact match
-                else:
-                    score = 0.7  # High score for same account type
-            else:
-                # Mismatch: question asks about X, section is about Y
-                # Only give partial score if asking about privileges in general
-                if q_about_privilege and section_is_privilege:
-                    score = 0.3  # Low score - different account type
-                elif q_about_privilege:
-                    score = 0.2  # Very low - different account
-                # else: score stays 0
-        
-        # Fallback: section has privilege but no specific account type
-        elif section_is_privilege and q_about_privilege:
-            score = 0.4  # Moderate score for privilege section with no specific account
-    
-    # 2. Table structure detection
-    header_lower = table.md_table_body.lower().split('\n')[0] if table.md_table_body else ""
-    body_lower = table.md_table_body.lower()
-    
-    is_privilege_table = "special privileges" in body_lower[:500] or ("items" in header_lower and "special" in header_lower)
-    is_contents_table = "page" in header_lower and "|" in header_lower and header_lower.count("|") <= 4
-    
-    # 3. Account type specificity in table body
-    if q_account_type:
-        body_account_type = _extract_account_type(body_lower[:1000])  # Check first 1000 chars
-        if body_account_type == q_account_type:
-            if is_privilege_table:
-                score += 0.3  # Boost for matching account type in privilege table
-        elif body_account_type:
-            # Different account type in table
-            if is_privilege_table and q_about_privilege:
-                score -= 0.2  # Penalize - wrong account type
-    
-    # 4. Privilege table bonus
-    if is_privilege_table and q_about_privilege and q_account_type:
-        # Only boost if we haven't already scored high
-        if score < 0.8:
-            score = min(score + 0.3, 0.9)
-    
-    # 5. Penalty for table of contents
-    if is_contents_table:
-        score -= 0.5
-        # Unless it specifically mentions the queried account type
-        if q_account_type and q_account_type in body_lower[:500]:
-            score += 0.3
-    
-    # 6. Penalty for fee comparison tables (5+ columns) when asking about privileges
-    first_line = table.md_table_body.split('\n')[0] if table.md_table_body else ""
-    col_count = first_line.count('|') - 1
-    is_fee_table = col_count >= 5
-    
-    if is_fee_table and q_about_privilege:
-        score -= 0.3
-    
-    # 7. Page number hint
-    page_hint = re.search(r"\b(?:page|p\.?)\s*(\d+)\b", q_lower)
-    if page_hint and table.pdf_page:
-        if int(page_hint.group(1)) == table.pdf_page:
-            score += 0.3
-    
-    return max(0.0, min(score, 1.0))
+    response = client.embeddings.create(
+        model=_EMBEDDING_MODEL,
+        input=text,
+    )
+    return response.data[0].embedding
+
+
+def cosine_similarity(a: list[float], b: list[float]) -> float:
+    """
+    Compute cosine similarity between two embedding vectors.
+    """
+    if not a or not b:
+        return 0.0
+
+    dot = 0.0
+    norm_a = 0.0
+    norm_b = 0.0
+    for x, y in zip(a, b):
+        dot += x * y
+        norm_a += x * x
+        norm_b += y * y
+    denom = math.sqrt(norm_a) * math.sqrt(norm_b)
+    if denom == 0:
+        return 0.0
+    return dot / denom
+
+
+def _ensure_table_embeddings(tables: list[AnnotatedTable]) -> None:
+    """
+    Populate module-level embedding cache for every annotated table,
+    embedding each table only once per session.
+    """
+    global _embedding_ready, _table_indices
+
+    if _embedding_ready and all(idx in _embedding_cache for idx in _table_indices):
+        return
+
+    _table_indices = [table.table_index for table in tables]
+    for table in tables:
+        if table.table_index not in _embedding_cache:
+            text = f"{table.section or ''}\n{table.md_table_body}"
+            _embedding_cache[table.table_index] = embed(text)
+
+    _embedding_ready = True
+
+
+def _select_candidate_indices(question: str, tables: list[AnnotatedTable], top_k: int = 5, threshold: float = 0.0) -> list[int]:
+    """
+    Select candidate table indices using embedding similarity.
+    """
+    if not tables:
+        return []
+
+    _ensure_table_embeddings(tables)
+    question_embedding = embed(question)
+
+    ranked = []
+    for table in tables:
+        cached = _embedding_cache.get(table.table_index)
+        if cached is None:
+            continue
+        score = cosine_similarity(question_embedding, cached)
+        ranked.append((score, table.table_index))
+
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    return [index for score, index in ranked if score > threshold][:top_k]
+
+
+def _rerank_with_llm(question: str, tables: list[AnnotatedTable], candidate_indices: list[int]) -> list[int]:
+    """
+    Ask the LLM to re-rank candidate table indices using compact summaries.
+
+    candidate_indices: list of table_index values (not list positions).
+    Returns a re-ordered list of table_index values.
+    """
+    lookup = {table.table_index: table for table in tables}
+
+    lines: list[str] = []
+    for display_idx, table_idx in enumerate(candidate_indices, start=1):
+        table = lookup[table_idx]
+        lines.append(f"{display_idx}. Section: {table.section or 'N/A'}")
+        body_lines = table.md_table_body.splitlines()[:2]
+        header = body_lines[0] if body_lines else ""
+        sample = body_lines[1] if len(body_lines) > 1 else ""
+        lines.append(f"   First row: {header}")
+        lines.append(f"   Second row: {sample}")
+
+    prompt = (
+        f"Question: {question}\n\n"
+        "Which of the following document sections most likely answers this question? "
+        "Reply with only the section number (1-based index).\n\n"
+        + "\n".join(lines)
+    )
+
+    response = client.chat.completions.create(
+        model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a careful retrieval assistant. "
+                    "Choose the single best document section index from the list."
+                ),
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+        temperature=0,
+        max_tokens=10,
+    )
+    content = (response.choices[0].message.content or "").strip()
+    try:
+        choice = int(content.split()[0]) - 1  # 1-based → 0-based list index
+        if 0 <= choice < len(candidate_indices):
+            chosen_table_idx = candidate_indices[choice]
+            return [chosen_table_idx] + [idx for idx in candidate_indices if idx != chosen_table_idx]
+    except ValueError:
+        pass
+    return candidate_indices
 
 
 def find_relevant_tables(question: str, tables: list[AnnotatedTable], full_markdown: str) -> list[AnnotatedTable]:
     """
-    Return tables relevant to the question, sorted by relevance score descending.
-    
-    Only returns tables with a relevance score >= MIN_SCORE_FOR_RELEVANCE.
+    Return tables relevant to the question, ranked using semantic similarity
+    and an optional LLM re-ranking step.
     """
-    scored = [
-        (score_table_relevance(question, tbl, full_markdown), tbl)
-        for tbl in tables
-    ]
-    scored.sort(key=lambda x: x[0], reverse=True)
-    # Filter by minimum threshold
-    return [tbl for score, tbl in scored if score >= MIN_SCORE_FOR_RELEVANCE]
+    candidate_indices = _select_candidate_indices(question, tables)
+    if not candidate_indices:
+        return []
+
+    if len(candidate_indices) > 1:
+        candidate_indices = _rerank_with_llm(question, tables, candidate_indices)
+
+    lookup = {table.table_index: table for table in tables}
+    return [lookup[idx] for idx in candidate_indices if idx in lookup]
 
 
 # ── Main QA logic ─────────────────────────────────────────────────────────────
@@ -516,8 +529,7 @@ def answer(question: str) -> QAAnswer:
       1. Load annotated markdown + parse VERIFY tags
       2. Find tables relevant to the question
       3. Check each table's VERIFY label:
-         - CORRECT  → answer directly from the annotated table content
-         - REVIEW   → answer directly but add a warning
+         - CORRECT / REVIEW → answer directly from the annotated table content
          - INCORRECT / UNKNOWN → return page images from PDF_REF page numbers
       4. If no relevant table found → answer directly from full annotated markdown
 
@@ -542,152 +554,126 @@ def answer(question: str) -> QAAnswer:
     relevant = find_relevant_tables(question, annotated_tables, full_markdown)
 
     if relevant:
-        # Group relevant tables by their status
-        correct_tables = [t for t in relevant if t.label == "CORRECT"]
-        review_tables = [t for t in relevant if t.label == "REVIEW"]
-        incorrect_tables = [t for t in relevant if t.label in ("INCORRECT", "UNKNOWN")]
-        
-        # Priority: CORRECT tables first, then REVIEW, then INCORRECT/UNKNOWN
-        primary_table = None
-        if correct_tables:
-            primary_table = correct_tables[0]
-        elif review_tables:
-            primary_table = review_tables[0]
-        elif incorrect_tables:
-            primary_table = incorrect_tables[0]
-        
-        if primary_table is None:
-            primary_table = relevant[0]
-        
-        # ── 3a. CORRECT → answer directly ─────────────────────────────────
-        if primary_table.label == "CORRECT":
-            llm_answer = answerdirectly(question, primary_table.md_table_body)
-            
-            # Check if there are other relevant INCORRECT tables for the same topic
-            # If so, add a note about them
-            if incorrect_tables:
-                incorrect_pages = [t.pdf_page for t in incorrect_tables if t.pdf_page is not None]
-                if incorrect_pages:
-                    note = (
-                        f"\n\nNote: While the primary relevant table (Section: {primary_table.section or 'N/A'}) "
-                        f"is verified as CORRECT, there are {len(incorrect_tables)} other related table(s) "
-                        f"on page(s) {incorrect_pages} that have INCORRECT status. "
-                        f"The markdown content for those sections may contain errors."
-                    )
-                    llm_answer += note
-            
+        # Separate verified tables from unverified ones; prioritize verified.
+        verified   = [t for t in relevant if t.label in ("CORRECT", "REVIEW")]
+        unverified = [t for t in relevant if t.label not in ("CORRECT", "REVIEW")]
+        table = verified[0] if verified else (unverified[0] if unverified else None)
+
+        if not table:
+            return QAAnswer(
+                status="flagged",
+                answer="Unable to resolve a relevant table for this question.",
+                images=[],
+                warning="⚠️ No suitable table could be selected for this question.",
+            )
+
+        # ── 3a. CORRECT / REVIEW → answer directly ─────────────────────
+        if table.label in ("CORRECT", "REVIEW"):
+            # Detect when a verified table was chosen over a semantically
+            # superior but INCORRECT table — warn the user to check images too.
+            best_unverified_score = 0.0
+            best_unverified_table: AnnotatedTable | None = None
+            if unverified:
+                question_emb = embed(question)
+                for t in unverified:
+                    cached = _embedding_cache.get(t.table_index)
+                    if cached is not None:
+                        s = cosine_similarity(question_emb, cached)
+                        if s > best_unverified_score:
+                            best_unverified_score = s
+                            best_unverified_table = t
+
+                # Warn when the unverified best-match is meaningfully better.
+                best_verified_score = 0.0
+                for t in verified:
+                    cached = _embedding_cache.get(t.table_index)
+                    if cached is not None:
+                        s = cosine_similarity(question_emb, cached)
+                        if s > best_verified_score:
+                            best_verified_score = s
+
+            semantic_gap_warning: str | None = None
+            if best_unverified_table and (best_unverified_score - best_verified_score) > 0.05:
+                reason_str = ", ".join(best_unverified_table.error_reasons) if best_unverified_table.error_reasons else "verification_failed"
+                semantic_gap_warning = (
+                    f"⚠️  Note: a semantically more relevant table (confidence={best_unverified_table.confidence:.2f}, "
+                    f"reason: {reason_str}) was marked INCORRECT. "
+                    f"The answer below comes from a less-semantically-relevant but verified table. "
+                    f"Please cross-check with the original page image(s)."
+                )
+
+            llm_answer = answerdirectly(question, table.md_table_body)
             return QAAnswer(
                 status="answered",
                 answer=llm_answer,
                 images=[],
-                warning=None,
-                table_verdict=primary_table,
+                warning=semantic_gap_warning,
+                table_verdict=table,
             )
 
-        # ── 3b. REVIEW → answer with warning ──────────────────────────────
-        if primary_table.label == "REVIEW":
-            reason_str = ", ".join(primary_table.error_reasons) if primary_table.error_reasons else "uncertain_verification"
-            warning = (
-                f"⚠️  This table has REVIEW status (confidence={primary_table.confidence:.2f}). "
-                f"Reason: {reason_str}. "
-                f"Answer is provided but may need verification."
-            )
-            llm_answer = answerdirectly(question, primary_table.md_table_body)
-            return QAAnswer(
-                status="answered",
-                answer=llm_answer,
-                images=[],
-                warning=warning,
-                table_verdict=primary_table,
-            )
+        # ── 3b. INCORRECT / UNKNOWN → return page images ───────────────
+        page_images: list[Path] = []
+        if table.pdf_page:
+            page_images = find_page_images([table.pdf_page])
 
-        # ── 3c. INCORRECT / UNKNOWN → return page images ──────────────────
-        # Collect page images for ALL relevant INCORRECT tables
-        all_pages_to_fetch: list[int] = []
-        for tbl in incorrect_tables:
-            if tbl.pdf_page is not None and tbl.pdf_page not in all_pages_to_fetch:
-                all_pages_to_fetch.append(tbl.pdf_page)
-        
-        # If no incorrect tables but we have REVIEW tables as fallback
-        if not all_pages_to_fetch and review_tables:
-            for tbl in review_tables:
-                if tbl.pdf_page is not None and tbl.pdf_page not in all_pages_to_fetch:
-                    all_pages_to_fetch.append(tbl.pdf_page)
-        
-        # Fetch page images
-        page_images = find_page_images(all_pages_to_fetch) if all_pages_to_fetch else []
-        
-        # If no image found via pdf_page, warn the user with diagnostics
-        image_debug = ""
-        if not page_images and all_pages_to_fetch:
-            available = list_available_page_images()
-            if available:
-                available_str = ", ".join(p.name for p in available[:10])
-                image_debug = (
-                    f" (Note: No image found for page(s) {all_pages_to_fetch}. "
-                    f"Available images: {available_str})"
-                )
-            else:
-                image_debug = (
-                    f" (Note: Page images directory is empty or not found at: {PAGE_IMAGES_DIR})"
-                )
-
-        reason_str = ", ".join(primary_table.error_reasons) if primary_table.error_reasons else "verification_failed"
-        
-        # Build comprehensive warning message
-        warning_tables_info = ""
-        if len(incorrect_tables) > 1:
-            warning_tables_info = (
-                f"\n  - {len(incorrect_tables)} INCORRECT table(s) found for this query:"
-            )
-            for i, tbl in enumerate(incorrect_tables[:5]):  # Show first 5
-                warning_tables_info += f"\n    {i+1}. Section: {tbl.section or 'N/A'}, Page: {tbl.pdf_page or 'N/A'}, Confidence: {tbl.confidence:.2f}"
-            if len(incorrect_tables) > 5:
-                warning_tables_info += f"\n    ... and {len(incorrect_tables) - 5} more table(s)"
-        
+        reason_str = ", ".join(table.error_reasons) if table.error_reasons else "verification_failed"
         warning = (
-            f"⚠️  The relevant table(s) were verified as INCORRECT "
-            f"(confidence={primary_table.confidence:.2f}). "
+            f"⚠️  The relevant table was verified as INCORRECT (confidence={table.confidence:.2f}). "
             f"Reason: {reason_str}. "
             f"The answer cannot be provided from the markdown as it may contain errors. "
-            f"Please consult the original page image(s) below.{image_debug}"
-            f"{warning_tables_info}"
+            f"Please consult the original page image(s) below."
         )
-
-        # Build answer message mentioning all relevant pages
-        pages_info = ""
-        if all_pages_to_fetch:
-            pages_info = f" Page(s): {all_pages_to_fetch}"
-        
-        answer_text = (
-            f"I cannot provide a reliable answer for this question because the relevant "
-            f"section was verified as INCORRECT "
-            f"(reason: {reason_str}, confidence={primary_table.confidence:.2f}).{pages_info} "
-            f"Please refer to the original page image(s) for the accurate information."
-        )
-        
-        # If there are CORRECT tables that could also help answer this question, mention them
-        if correct_tables:
-            answer_text += (
-                f"\n\nHowever, I found {len(correct_tables)} CORRECT table(s) that may also "
-                f"contain relevant information for your query."
-            )
 
         return QAAnswer(
             status="flagged",
-            answer=answer_text,
+            answer=(
+                f"I cannot provide a reliable answer for this question because the relevant "
+                f"section was verified as INCORRECT (reason: {reason_str}, confidence={table.confidence:.2f}). "
+                f"Please refer to the original page image(s) for the accurate information."
+            ),
             images=page_images,
             warning=warning,
-            table_verdict=primary_table,
+            table_verdict=table,
         )
 
-    # ── 4. No relevant table found → answer from full markdown ──────────────
-    llm_answer = answerdirectly(question, full_markdown)
+    # ── 4. No relevant table found → token-safe fallback ─────────────────────
+    # Take top-3 tables by raw embedding score and build a limited context.
+    _ensure_table_embeddings(annotated_tables)
+    question_embedding = embed(question)
+
+    ranked = []
+    for table in annotated_tables:
+        cached = _embedding_cache.get(table.table_index)
+        if cached is not None:
+            score = cosine_similarity(question_embedding, cached)
+            ranked.append((score, table))
+
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    top3 = [tbl for _, tbl in ranked[:3]]
+
+    # Build fallback context capped at ~6000 tokens (1 token ≈ 4 chars → 24000 chars)
+    fallback_parts: list[str] = []
+    total_chars = 0
+    char_limit = 24000
+    for table in top3:
+        part = table.md_table_body
+        if total_chars + len(part) + 1 <= char_limit:
+            fallback_parts.append(part)
+            total_chars += len(part) + 1
+        else:
+            remaining = char_limit - total_chars
+            if remaining > 0:
+                fallback_parts.append(part[:remaining])
+            break
+
+    fallback_context = "\n\n".join(fallback_parts)
+    llm_answer = answerdirectly(question, fallback_context)
+
     return QAAnswer(
         status="answered",
         answer=llm_answer,
         images=[],
-        warning=None,
+        warning="Answer based on best-effort semantic match; no high-confidence table found.",
     )
 
 
@@ -705,24 +691,6 @@ def _print_result(result: QAAnswer) -> None:
         print("Relevant page image(s) (verified INCORRECT — consult for accuracy):")
         for img in result.images:
             print(f"  {img}")
-        print()
-    elif result.status == "flagged":
-        # FIX: Tell user explicitly that no images were found instead of silent failure
-        print()
-        print("⚠️  No page images were found to display.")
-        print(f"  Expected image directory: {PAGE_IMAGES_DIR}")
-        if PAGE_IMAGES_DIR.exists():
-            all_imgs = list_available_page_images()
-            if all_imgs:
-                print(f"  Available images ({len(all_imgs)} total):")
-                for img in all_imgs[:5]:
-                    print(f"    {img.name}")
-                if len(all_imgs) > 5:
-                    print(f"    ... and {len(all_imgs) - 5} more")
-            else:
-                print("  Directory exists but contains no image files.")
-        else:
-            print("  Directory does not exist. Run the parser/verifier pipeline first.")
         print()
     if result.table_verdict:
         print(f"[Table {result.table_verdict.table_index + 1}] "

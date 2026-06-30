@@ -3,7 +3,7 @@
   "description": "LLM-summarized pattern rules for verifying PDF-to-Markdown table conversion accuracy. Each rule has detection logic, severity weights, false-positive guards, and an LLM-assisted detection prompt template. Weights are relaxed to tolerate PDF-to-MD conversion variations.",
   "confidence_thresholds": {
     "correct": 0.70,
-    "review": 0.60
+    "review": 0.65
   },
   "rules": [
     {

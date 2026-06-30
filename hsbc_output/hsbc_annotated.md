@@ -56,8 +56,8 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 7. **Credit facilities** — HSBC Jade, HSBC Premier, HSBC One and Personal Integrated Account customers can enjoy credit facilities.
 8. **Use these self-service methods for more convenient and efficient money management.**
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- PDF_REF: page=3 -->
 | Service | **HSBC Internet Banking** | **HSBC Mobile Banking** | **Phonebanking Automated** | **Phonebanking Personal** | **Self-service banking** |
 |---|---|---|---|---|---|
 | Check balance | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -104,7 +104,7 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 ## Contents
 
 <!-- VERIFY: CORRECT | confidence=0.90 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=6 -->
 | Item | Page |
 |---|---:|
 | A. GENERAL SERVICES | 8 |
@@ -278,8 +278,8 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ### A1. General services – all accounts
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.65 -->
+<!-- PDF_REF: page=7 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Cashier’s order<sup>1</sup><br>• Issue/repurchase a cashier’s order<br>(This charge will be waived if the repurchase of cashier’s order follows the cheque clearing process) | HK$75 | HK$60 | HK$40 | Waived | Waived |
@@ -308,8 +308,8 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ### A1. General services – all accounts
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- PDF_REF: page=8 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Special clearing arrangement (mark good)<br>• To issue a special clearing memo to general customers for delivery to the cheque’s/draft’s issuing bank | HK$60 plus other bank charges | HK$60 plus other bank charges | HK$60 plus other bank charges | HK$60 plus other bank charges | HK$60 plus other bank charges |
@@ -339,7 +339,7 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 ### A1. General services – all accounts
 
 <!-- VERIFY: CORRECT | confidence=0.95 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=8 -->
 | Item | Charge |
 |---|---|
 | Unauthorised overdraft<sup>1</sup><br>If any of the following accounts has no overdraft facility or if an overdraft exceeds its authorised limit (each occurrence) | Prevailing interest rate (calculated on a daily basis on the amount of the unauthorised overdraft and applied monthly) plus handling charge |
@@ -357,8 +357,8 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ### A2. General services – overseas services
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.70 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.70 -->
+<!-- PDF_REF: page=9 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Apply overseas HSBC account online | Waived | Waived | Waived | Waived | Waived |
@@ -370,8 +370,8 @@ To save money, time and effort, please log on to HSBC Internet Banking at www.hs
 
 ## B. Deposit account/services
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- PDF_REF: page=10 -->
 | Item | **Hong Kong dollar Current** | **Hong Kong dollar Savings** | **Hong Kong dollar Cash Card** | **Renminbi Current** | **Renminbi Savings** | **US dollar Current** | **US dollar Savings** | **Other foreign currencies Current** | **Other foreign currencies Savings** | **Wayfoong Passbook Gold** |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Stop payment order<br>To stop payment order, or to cancel each stop payment order, issued by the account holder<br>Paper Cheque (each or a series of stop/cancel stop payment) | HK$150 | N/A | N/A | HK$150 | N/A | HK$150 | N/A | N/A | N/A | N/A |
@@ -408,7 +408,7 @@ Note: After imposing the early uplift handling fee, the principal amount receive
 ### C1. Payment services – autoPay services
 
 <!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.63 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=10 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | To set up or amend each autoPay instruction<sup>1</sup><br>• Via paper form | HK$30<sup>2,9</sup> | HK$30<sup>2,9</sup> | HK$30<sup>2,9</sup> | HK$30<sup>2,9</sup> | HK$30<sup>2,9</sup> |
@@ -419,8 +419,8 @@ Note: After imposing the early uplift handling fee, the principal amount receive
 
 #### Inward payments
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.63 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- PDF_REF: page=11 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Telegraphic transfer<sup>4</sup><br>• Proceeds credited to an account with HSBC | Waived<sup>5</sup> | Waived<sup>5</sup> | Waived<sup>5</sup> | Waived<sup>5</sup> | Waived<sup>5</sup> |
@@ -452,8 +452,8 @@ Note: After imposing the early uplift handling fee, the principal amount receive
 
 #### Outward payments
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.65 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- PDF_REF: page=11 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Global payments debited from an account with HSBC<sup>±,*</sup><br>Each transfer<br>• Via HSBC Internet Banking/HSBC Mobile Banking<br>- Renminbi telegraphic transfer to HSBC Group/branches in mainland China<sup>#</sup><br>- Renminbi telegraphic transfer to mainland China through cross-boundary Wealth Management Connect<br>- Other telegraphic transfers<br>- All others | Waived<br>Waived<br>HK$50<br>Waived | Waived<br>Waived<br>HK$50<br>Waived | Waived<br>Waived<br>HK$50<br>Waived | Waived<br>Waived<br>HK$50<br>Waived | Waived<br>Waived<br>HK$50<br>Waived |
@@ -475,8 +475,8 @@ Note:
 
 ### C3. Global Transfers
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.65 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.65 -->
+<!-- PDF_REF: page=12 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Global Transfers<sup>1</sup><br>Each Transfer | N/A | Waived | Waived | Waived | Waived |
@@ -487,8 +487,8 @@ Note:
 
 ### C4. Interbank fund transfers
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.65 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- PDF_REF: page=12 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Payment through Real Time Gross Settlement (RTGS)<sup>ᅞ,*</sup><br>Each real time outward RTGS payment to the credit of an account held with other local banks<sup>~</sup><br>• Via HSBC Internet Banking | Waived<sup>§</sup> | Waived<sup>§</sup> | Waived<sup>§</sup> | Waived<sup>§</sup> | Waived<sup>§</sup> |
@@ -505,7 +505,7 @@ Note:
 ### C5. PayMe from HSBC
 
 <!-- VERIFY: CORRECT | confidence=0.95 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=13 -->
 | Item | Charge |
 |---|---|
 | Credit Card/ Bank Account Top-Up<sup>#</sup><br>• HSBC Credit Card/ Bank Account | Free |
@@ -532,8 +532,8 @@ Note:
 
 ## D. Mortgage services
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- PDF_REF: page=14 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Cancellation fee<sup>1</sup><br>Each application | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 | 0.15% of the loan amount subject to a minimum of HK$5,000 |
@@ -567,7 +567,7 @@ Note: The above service charges (except the cancellation fee and the charge for 
 ## E. Integrated account services
 
 <!-- VERIFY: CORRECT | confidence=0.95 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=15 -->
 | Item | Charge |
 |---|---|
 | Below balance fee<sup>1</sup> (based on average Total Relationship Balance over the last three months)<br>**HSBC Jade**<br>For customer with a Total Relationship Balance of<br>• HK$1,000,000 and above<br>• Below HK$1,000,000 | Waived<br>Waived |
@@ -607,7 +607,7 @@ To determine your overall TRB in joint capacity, the applicable TRB of all your 
 ### Personal Instalment Loan/ Personal Tax Loan/ Personal Instalment Loan Balance Consolidation Program
 
 <!-- VERIFY: CORRECT | confidence=0.95 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=15 -->
 | Item | Charge |
 |---|---|
 | Late Charge<sup>1</sup> | HK$400 per default and overdue interest at a rate of 2.25% per month on the overdue monthly repayment(s) |
@@ -618,7 +618,7 @@ To determine your overall TRB in joint capacity, the applicable TRB of all your 
 ### Revolving Credit Facility
 
 <!-- VERIFY: CORRECT | confidence=1.00 -->
-<!-- PDF_REF:  -->
+<!-- PDF_REF: page=15 -->
 | Item | Charge |
 |---|---|
 | Annual Fee | 1% of the limit (maximum HK$1,000) |
@@ -627,8 +627,8 @@ To determine your overall TRB in joint capacity, the applicable TRB of all your 
 
 ### Overdraft
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.70 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.70 -->
+<!-- PDF_REF: page=16 -->
 | Item | **HSBC One and Personal Integrated Account — Clean Credit** | **HSBC One and Personal Integrated Account — Secured Credit** | **HSBC Premier and HSBC Jade — Clean Credit** | **HSBC Premier and HSBC Jade — Secured Credit** |
 |---|---|---|---|---|
 | Service Fee | Annual Fee: 1% of the overdraft limit (Minimum: HK$200, Maximum: HK$700) | Monthly Fee: pro-rated on HK$50 based on utilisation % of the credit limit in the previous month, maximum HK$50 | Not applicable | Monthly Fee: pro-rated on HK$50 based on utilisation % of the credit limit in the previous month, maximum HK$50 |
@@ -645,8 +645,8 @@ To determine your overall TRB in joint capacity, the applicable TRB of all your 
 
 ### G1. Personal credit cards
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.75 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.75 -->
+<!-- PDF_REF: page=17 -->
 | Item | **HSBC Premier Mastercard® Credit Card** | **HSBC Advance Visa Platinum Card** | **HSBC Red Credit Card** | **HSBC Visa Signature Card** | **HSBC EveryMile Credit Card** | **Platinum Card (incl. green credit card)** | **Visa Gold, Gold Mastercard** | **Visa, Mastercard** | **iCAN Card** | **US dollar Visa Gold** | **HSBC Pulse UnionPay Dual Currency Diamond Card** | **UnionPay Dual Currency Card** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Annual fee<br>Primary card | waived permanently | waived permanently | waived permanently | HK$2,000 | HK$2,000 | HK$1,800 | HK$600 | HK$300 | HK$300 | US$80 | HK$1,800 | HK$300 |
@@ -698,8 +698,8 @@ Note:
 
 ### G2. ATM card/Other account cards
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- PDF_REF: page=18 -->
 | Item | **Personal Customer** | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|---|
 | Annual fee | Waived | Waived | Waived | Waived | Waived |
@@ -739,8 +739,8 @@ Note:
 
 ### G3. Mastercard Debit Card/Mastercard Supplementary Debit Card
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
+<!-- PDF_REF: page=20 -->
 | Item | **Personal Integrated Account** | **HSBC One** | **HSBC Premier** | **HSBC Jade** |
 |---|---|---|---|---|
 | Annual fee | Waived | Waived | Waived | Waived |
@@ -770,8 +770,8 @@ Note:
 
 HSBC Jade brings you full fee waivers or preferential offers for selected products and services.
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
-<!-- PDF_REF:  -->
+<!-- VERIFY: CORRECT | confidence=0.93 -->
+<!-- PDF_REF: page=21 -->
 | Items | Special privileges |
 |---|---|
 | 1. Integrated account services<br>Below balance fee<sup>1</sup><br>(based on average Total Relationship Balance over the last three months<sup>2</sup>)<br>For HSBC Jade client with a Total Relationship Balance of<br>• HK$1,000,000 and above<br>• Below HK$1,000,000 | Waived<br>Waived |
@@ -801,7 +801,7 @@ HSBC Jade brings you full fee waivers or preferential offers for selected produc
 
 <!-- Page 20 -->
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.70 -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.70 -->
 <!-- PDF_REF: page=20 -->
 | Items | Special privileges |
 |---|---|
@@ -857,7 +857,7 @@ HSBC Jade brings you full fee waivers or preferential offers for selected produc
 
 HSBC Premier brings you full fee waivers or preferential offer of up to 50% off on selected banking services.
 
-<!-- VERIFY: INCORRECT | reason=cell_content_substitution | confidence=0.73 -->
+<!-- VERIFY: REVIEW | reason=cell_content_substitution | confidence=0.73 -->
 <!-- PDF_REF: page=20 -->
 | Items | Special privileges |
 |---|---|
